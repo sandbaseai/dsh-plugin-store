@@ -46,17 +46,17 @@ interface StorePlugin {
   updatedAt: string
 }
 
-interface StoreCatalog {
-  plugins: StorePlugin[]
-  total: number
+interface StoreCatalogResponseResponse {
+  catalog: StorePlugin[]
+  metrics: { pluginsTracked: number }
   updatedAt: string
 }
 
-let cachedCatalog: StoreCatalog | null = null
+let cachedCatalog: StoreCatalogResponse | null = null
 let cacheTime = 0
 const CACHE_TTL = 300_000
 
-async function getCatalog(catalogUrl: string): Promise<StoreCatalog> {
+async function getCatalog(catalogUrl: string): Promise<StoreCatalogResponse> {
   const now = Date.now()
   if (cachedCatalog && (now - cacheTime) < CACHE_TTL) return cachedCatalog
 
@@ -65,7 +65,7 @@ async function getCatalog(catalogUrl: string): Promise<StoreCatalog> {
     if (cachedCatalog) return cachedCatalog
     throw new Error(`Catalog fetch failed: HTTP ${response.status}`)
   }
-  const data = await response.json() as StoreCatalog
+  const data = await response.json() as StoreCatalogResponse
   cachedCatalog = data
   cacheTime = now
   return data
@@ -95,7 +95,7 @@ export function apply(ctx: Context, config: Config = {}) {
           const catalog = await getCatalog(catalogUrl)
           const q = (args.query || '').toLowerCase()
           const cat = args.category?.toLowerCase()
-          let results = catalog.plugins.filter(p => {
+          let results = catalog.catalog.filter(p => {
             const matchQ = !q || p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q)
             const matchCat = !cat || p.categories?.some(c => c.toLowerCase() === cat)
             return matchQ && matchCat
@@ -139,7 +139,7 @@ export function apply(ctx: Context, config: Config = {}) {
         try {
           const catalog = await getCatalog(catalogUrl)
           const cat = args.category?.toLowerCase()
-          let results = catalog.plugins.filter(p => {
+          let results = catalog.catalog.filter(p => {
             return !cat || p.categories?.some(c => c.toLowerCase() === cat)
           })
 
@@ -151,7 +151,7 @@ export function apply(ctx: Context, config: Config = {}) {
           const limit = args.limit || 20
           results = results.slice(0, limit)
 
-          const lines = [`# Plugin Store Catalog`, `Total: ${catalog.total} plugins | Showing: ${results.length}\n`]
+          const lines = [`# Plugin Store Catalog`, `Total: ${catalog.metrics?.pluginsTracked} plugins | Showing: ${results.length}\n`]
           for (const p of results) {
             lines.push(`- **${p.name}** Stars:${p.stars} | Score:${p.overallScore.toFixed(0)} | ${p.description}`)
             lines.push(`  Install: \`${p.installPath || `dsh plugin --profile web add github:${p.repository}`}\``)
@@ -180,7 +180,7 @@ export function apply(ctx: Context, config: Config = {}) {
         try {
           const catalog = await getCatalog(catalogUrl)
           const q = args.name.toLowerCase()
-          const plugin = catalog.plugins.find(p =>
+          const plugin = catalog.catalog.find(p =>
             p.name.toLowerCase() === q ||
             p.repository.toLowerCase().includes(q) ||
             p.id.toLowerCase().includes(q),
