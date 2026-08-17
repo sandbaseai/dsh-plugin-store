@@ -46,17 +46,17 @@ interface StorePlugin {
   updatedAt: string
 }
 
-interface StoreCatalogResponseResponse {
+interface CatalogResponse {
   catalog: StorePlugin[]
   metrics: { pluginsTracked: number }
   updatedAt: string
 }
 
-let cachedCatalog: StoreCatalogResponse | null = null
+let cachedCatalog: CatalogResponse | null = null
 let cacheTime = 0
 const CACHE_TTL = 300_000
 
-async function getCatalog(catalogUrl: string): Promise<StoreCatalogResponse> {
+async function getCatalog(catalogUrl: string): Promise<CatalogResponse> {
   const now = Date.now()
   if (cachedCatalog && (now - cacheTime) < CACHE_TTL) return cachedCatalog
 
@@ -65,7 +65,7 @@ async function getCatalog(catalogUrl: string): Promise<StoreCatalogResponse> {
     if (cachedCatalog) return cachedCatalog
     throw new Error(`Catalog fetch failed: HTTP ${response.status}`)
   }
-  const data = await response.json() as StoreCatalogResponse
+  const data = await response.json() as CatalogResponse
   cachedCatalog = data
   cacheTime = now
   return data
@@ -88,19 +88,19 @@ export function apply(ctx: Context, config: Config = {}) {
       },
       output: {
         schema: { type: 'string' },
-        render: (_args, value) => [{ type: 'text', text: value }],
+        render: (_args: any, value: string) => [{ type: 'text' as const, text: value }],
       },
-      async execute(args, _exec) {
+      async execute(args: any, _exec: any) {
         try {
           const catalog = await getCatalog(catalogUrl)
-          const q = (args.query || '').toLowerCase()
-          const cat = args.category?.toLowerCase()
-          let results = catalog.catalog.filter(p => {
+          const q = String(args.query || '').toLowerCase()
+          const cat = args.category ? String(args.category).toLowerCase() : ''
+          let results = catalog.catalog.filter((p: StorePlugin) => {
             const matchQ = !q || p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q)
-            const matchCat = !cat || p.categories?.some(c => c.toLowerCase() === cat)
+            const matchCat = !cat || p.categories?.some((c: string) => c.toLowerCase() === cat)
             return matchQ && matchCat
           })
-          results.sort((a, b) => b.overallScore - a.overallScore)
+          results.sort((a: StorePlugin, b: StorePlugin) => b.overallScore - a.overallScore)
           const limit = args.limit || 10
           results = results.slice(0, limit)
 
@@ -133,25 +133,26 @@ export function apply(ctx: Context, config: Config = {}) {
       },
       output: {
         schema: { type: 'string' },
-        render: (_args, value) => [{ type: 'text', text: value }],
+        render: (_args: any, value: string) => [{ type: 'text' as const, text: value }],
       },
-      async execute(args, _exec) {
+      async execute(args: any, _exec: any) {
         try {
           const catalog = await getCatalog(catalogUrl)
-          const cat = args.category?.toLowerCase()
-          let results = catalog.catalog.filter(p => {
-            return !cat || p.categories?.some(c => c.toLowerCase() === cat)
+          const cat = args.category ? String(args.category).toLowerCase() : ''
+          let results = catalog.catalog.filter((p: StorePlugin) => {
+            return !cat || p.categories?.some((c: string) => c.toLowerCase() === cat)
           })
 
           switch (args.sort) {
-            case 'stars': results.sort((a, b) => b.stars - a.stars); break
-            case 'newest': results.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); break
-            default: results.sort((a, b) => b.overallScore - a.overallScore)
+            case 'stars': results.sort((a: StorePlugin, b: StorePlugin) => b.stars - a.stars); break
+            case 'newest': results.sort((a: StorePlugin, b: StorePlugin) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); break
+            default: results.sort((a: StorePlugin, b: StorePlugin) => b.overallScore - a.overallScore)
           }
           const limit = args.limit || 20
           results = results.slice(0, limit)
 
-          const lines = [`# Plugin Store Catalog`, `Total: ${catalog.metrics?.pluginsTracked} plugins | Showing: ${results.length}\n`]
+          const total = catalog.metrics?.pluginsTracked ?? catalog.catalog.length
+          const lines = [`# Plugin Store Catalog`, `Total: ${total} plugins | Showing: ${results.length}\n`]
           for (const p of results) {
             lines.push(`- **${p.name}** Stars:${p.stars} | Score:${p.overallScore.toFixed(0)} | ${p.description}`)
             lines.push(`  Install: \`${p.installPath || `dsh plugin --profile web add github:${p.repository}`}\``)
@@ -174,13 +175,13 @@ export function apply(ctx: Context, config: Config = {}) {
       },
       output: {
         schema: { type: 'string' },
-        render: (_args, value) => [{ type: 'text', text: value }],
+        render: (_args: any, value: string) => [{ type: 'text' as const, text: value }],
       },
-      async execute(args, _exec) {
+      async execute(args: any, _exec: any) {
         try {
           const catalog = await getCatalog(catalogUrl)
-          const q = args.name.toLowerCase()
-          const plugin = catalog.catalog.find(p =>
+          const q = String(args.name).toLowerCase()
+          const plugin = catalog.catalog.find((p: StorePlugin) =>
             p.name.toLowerCase() === q ||
             p.repository.toLowerCase().includes(q) ||
             p.id.toLowerCase().includes(q),
