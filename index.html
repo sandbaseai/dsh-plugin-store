@@ -407,7 +407,7 @@ button { color: inherit; }
 
   <section class="masthead">
     <h1>DSH <em>Plugin Store</em></h1>
-    <p>Curated Cordis plugins for DeepSeek Harness.<br />One API key, zero config.</p>
+    <p>Install-verified DSH plugins, ordered by score.<br />Browse, search, install — all in one place.</p>
   </section>
 
   <section class="metrics-row" aria-label="Store metrics">
@@ -497,7 +497,6 @@ async function loadCatalog() {
     const res = await fetch(CATALOG_URL);
     const data = await res.json();
     allPlugins = (data.catalog || [])
-      .filter(p => p.discoveredBy?.includes('sandbase'))
       .sort((a, b) => (b.overallScore || 0) - (a.overallScore || 0));
     render();
   } catch (err) {
