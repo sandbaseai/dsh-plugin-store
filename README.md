@@ -2,15 +2,11 @@
 
 > 在 DeepSeek Harness 里直接浏览和安装插件
 
-## 功能介绍
+## Web UI
 
-DSH Plugin Store 连接 [dshpluginleaderboard.com](https://dshpluginleaderboard.com)，在 DSH 里提供 3 个工具：
+🌐 **[sandbaseai.github.io/dsh-plugin-store](https://sandbaseai.github.io/dsh-plugin-store)**
 
-| 工具 | 功能 |
-|------|------|
-| `store_search` | 搜索插件（按名称/描述/分类） |
-| `store_catalog` | 浏览完整目录，按评分/星标/最新排序 |
-| `store_install` | 获取任意插件的安装命令 |
+完全复刻 [dshpluginleaderboard.com](https://dshpluginleaderboard.com) 的设计，展示 Sandbase 出品的 102 个 Cordis 插件。
 
 ## 安装
 
@@ -27,14 +23,12 @@ pnpm add @sandbaseai/dsh-plugin-store
     catalogUrl: https://dshpluginleaderboard.com/api/catalog
 ```
 
-## 使用
+## 工具
 
-启用后，Agent 可以直接调用：
+| 工具 | 功能 |
+|------|------|
+| `store_search` | 搜索插件（按名称/描述/分类） |
+| `store_catalog` | 浏览完整目录，按评分/星标/最新排序 |
+| `store_install` | 获取任意插件的安装命令 |
 
-```
-> 搜索 UI 相关的插件
-→ store_search(query: "UI", category: "UI Enhancements")
-
-> 安装 dsh-status-rotator
-→ store_install(name: "dsh-status-rotator")
-```
+启用后 Agent 可以直接调用这些工具从 leaderboard 拉取数据。
