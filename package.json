@@ -1,12 +1,25 @@
 {
   "name": "@sandbaseai/dsh-plugin-store",
-  "description": "DSH Plugin Store — browse and install plugins from dshpluginleaderboard.com",
+  "description": "Native plugin marketplace for discovering, filtering, installing, and managing DeepSeek Harness plugins",
   "version": "0.1.0",
+  "homepage": "https://github.com/sandbaseai/dsh-plugin-store#readme",
+  "bugs": {
+    "url": "https://github.com/sandbaseai/dsh-plugin-store/issues"
+  },
+  "keywords": [
+    "deepseek",
+    "deepseek-harness",
+    "dsh",
+    "cordis",
+    "plugin-store",
+    "plugin-marketplace",
+    "agent-harness",
+    "ai-agents"
+  ],
   "publishConfig": { "access": "public" },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sandbaseai/dsh-kit.git",
-    "directory": "packages/dsh-store"
+    "url": "git+https://github.com/sandbaseai/dsh-plugin-store.git"
   },
   "type": "module",
   "main": "lib/index.js",
