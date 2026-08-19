@@ -103,6 +103,11 @@ Installing a plugin may download and execute third-party code, including package
 
 The native installer validates GitHub repository identifiers and only accepts repositories returned by the configured catalog.
 
+Report security issues through GitHub's
+[private vulnerability reporting](https://github.com/sandbaseai/dsh-plugin-store/security/advisories/new),
+not a public issue. See the full [security policy](SECURITY.md) for supported
+versions, trust boundaries, and disclosure guidance.
+
 ## Roadmap
 
 - [x] Searchable community catalog
