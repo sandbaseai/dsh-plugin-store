@@ -31,6 +31,12 @@ The DSH ecosystem is growing quickly, but finding a plugin still means searching
 
 The current native Settings integration is being developed with the DeepSeek Harness `0.1.0-rc.5` source tree and is prepared for upstream collaboration. It includes:
 
+<p align="center">
+  <img src="assets/dsh-plugin-store-community-view.png" alt="DSH Plugin Store Community view filtered by the Desktop tag" width="760">
+</p>
+
+<p align="center"><em>Real preview: the Community view filtered by the Desktop tag.</em></p>
+
 - `Community` and `Installed` tabs
 - Server-side tag filtering and pagination
 - Same-origin catalog proxy without browser CORS dependency
