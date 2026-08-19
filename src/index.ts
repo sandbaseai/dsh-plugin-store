@@ -10,13 +10,14 @@
  */
 
 import type { Context } from '@deepseek-ai/cordis'
+import { spawn } from 'node:child_process'
 import z from '@deepseek-ai/schemastery'
 import type {} from '@deepseek-ai/dsh-web'
+import type {} from '@deepseek-ai/dsh-host-webserver'
 import { defineTool } from '@deepseek-ai/dsh-tools'
-import { handleUpstreamError } from '@sandbaseai/dsh-plugin-shared'
 
 export const name = 'dsh_plugin_store'
-export const inject = ['tools', 'web'] as const
+export const inject = ['tools', 'web', 'webServer'] as const
 
 export interface Config {
   enabled?: boolean
@@ -52,29 +53,164 @@ interface CatalogResponse {
   updatedAt: string
 }
 
+interface LeaderboardItem {
+  repository: string
+  description?: string
+  categories?: string[]
+  rank?: number
+  stars?: number
+  stars7dDelta?: number
+}
+
+interface LeaderboardResponse {
+  items?: LeaderboardItem[]
+  catalog?: StorePlugin[]
+  metrics?: { pluginsTracked?: number }
+  total?: number
+  limit?: number
+  offset?: number
+  facets?: { categories?: string[] }
+}
+
 let cachedCatalog: CatalogResponse | null = null
 let cacheTime = 0
 const CACHE_TTL = 300_000
+const knownCatalogRepositories = new Set<string>()
 
-async function getCatalog(catalogUrl: string): Promise<CatalogResponse> {
+function handleUpstreamError(err: unknown, toolName: string): never {
+  const message = err instanceof Error ? err.message : String(err)
+  throw new Error(`${toolName}: ${message}`)
+}
+
+async function getCatalog(catalogUrl: string, timeoutMs = 30_000): Promise<CatalogResponse> {
   const now = Date.now()
   if (cachedCatalog && (now - cacheTime) < CACHE_TTL) return cachedCatalog
 
-  const response = await fetch(catalogUrl)
+  const response = await fetch(catalogUrl, { signal: AbortSignal.timeout(timeoutMs) })
   if (!response.ok) {
     if (cachedCatalog) return cachedCatalog
     throw new Error(`Catalog fetch failed: HTTP ${response.status}`)
   }
-  const data = await response.json() as CatalogResponse
-  cachedCatalog = data
+  const raw = await response.json() as LeaderboardResponse
+  const source = raw.catalog ?? (raw.items ?? []).map((item): StorePlugin => ({
+    id: item.repository,
+    name: item.repository.split('/').at(-1) ?? item.repository,
+    repository: item.repository,
+    description: item.description ?? '',
+    categories: item.categories ?? [],
+    installPath: `dsh plugin --profile web add github:${item.repository}`,
+    verificationStatus: 'community',
+    stars: item.stars ?? 0,
+    forks: 0,
+    overallScore: Math.max(0, 1000 - (item.rank ?? 1000)),
+    stars7dDelta: item.stars7dDelta ?? 0,
+    createdAt: '',
+    updatedAt: '',
+  }))
+  cachedCatalog = {
+    catalog: source,
+    metrics: { pluginsTracked: raw.metrics?.pluginsTracked ?? source.length },
+    updatedAt: new Date().toISOString(),
+  }
   cacheTime = now
-  return data
+  return cachedCatalog
+}
+
+async function getCatalogPage(catalogUrl: string, limit: number, offset: number, category = '', timeoutMs = 30_000): Promise<{
+  items: StorePlugin[]; total: number; limit: number; offset: number; categories: string[]
+}> {
+  const url = new URL(catalogUrl)
+  url.searchParams.set('limit', String(limit))
+  url.searchParams.set('offset', String(offset))
+  if (category.length > 0) url.searchParams.set('category', category)
+  const response = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) })
+  if (!response.ok) throw new Error(`Catalog fetch failed: HTTP ${response.status}`)
+  const raw = await response.json() as LeaderboardResponse
+  const items = raw.catalog ?? (raw.items ?? []).map((item): StorePlugin => ({
+    id: item.repository, name: item.repository.split('/').at(-1) ?? item.repository,
+    repository: item.repository, description: item.description ?? '', categories: item.categories ?? [],
+    installPath: `dsh plugin --profile web add github:${item.repository}`,
+    verificationStatus: 'community', stars: item.stars ?? 0, forks: 0,
+    overallScore: Math.max(0, 1000 - (item.rank ?? 1000)), stars7dDelta: item.stars7dDelta ?? 0,
+    createdAt: '', updatedAt: '',
+  }))
+  for (const item of items) knownCatalogRepositories.add(item.repository)
+  return {
+    items, total: raw.total ?? raw.metrics?.pluginsTracked ?? items.length,
+    limit: raw.limit ?? limit, offset: raw.offset ?? offset,
+    categories: raw.facets?.categories ?? [],
+  }
+}
+
+function sendJson(res: import('node:http').ServerResponse, status: number, value: unknown): void {
+  res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' })
+  res.end(JSON.stringify(value))
+}
+
+async function readBody(req: import('node:http').IncomingMessage): Promise<unknown> {
+  const chunks: Buffer[] = []
+  let size = 0
+  for await (const chunk of req) {
+    const value = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)
+    size += value.length
+    if (size > 16_384) throw new Error('Request body is too large')
+    chunks.push(value)
+  }
+  return JSON.parse(Buffer.concat(chunks).toString('utf8')) as unknown
+}
+
+async function installRepository(repository: string): Promise<void> {
+  const entry = process.argv[1]
+  if (entry === undefined) throw new Error('Cannot resolve the current DSH entrypoint')
+  await new Promise<void>((resolve, reject) => {
+    // A source-checkout launch uses apps/cli/src/bin.ts through tsx's ESM
+    // loader. Reuse that loader for the child; a packaged .js entry needs no
+    // loader and must not depend on tsx being installed globally.
+    const entryArgs = entry.endsWith('.ts') ? ['--import', 'tsx/esm', entry] : [entry]
+    const child = spawn(process.execPath, [...entryArgs, 'plugin', '--profile', 'web', 'add', `github:${repository}`], {
+      cwd: process.cwd(), env: process.env, stdio: ['ignore', 'pipe', 'pipe'],
+    })
+    let output = ''
+    child.stdout.on('data', chunk => { output += String(chunk) })
+    child.stderr.on('data', chunk => { output += String(chunk) })
+    child.once('error', reject)
+    child.once('close', code => { code === 0 ? resolve() : reject(new Error(output.trim() || `Installer exited with code ${String(code)}`)) })
+  })
 }
 
 export function apply(ctx: Context, config: Config = {}) {
   if (config.enabled === false) return
 
   const catalogUrl = config.catalogUrl ?? 'https://dshpluginleaderboard.com/api/catalog'
+  const timeoutMs = Math.max(1_000, config.timeoutMs ?? 30_000)
+
+  ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/api/plugin-store/catalog', handler: async (req, res) => {
+    if (req.method !== 'GET') return sendJson(res, 405, { error: 'Method not allowed' })
+    try {
+      const requestUrl = new URL(req.url ?? '/', 'http://localhost')
+      const limit = Math.min(100, Math.max(1, Number(requestUrl.searchParams.get('limit')) || 50))
+      const offset = Math.max(0, Number(requestUrl.searchParams.get('offset')) || 0)
+      const category = requestUrl.searchParams.get('category') ?? ''
+      const page = await getCatalogPage(catalogUrl, limit, offset, category, timeoutMs)
+      sendJson(res, 200, { total: page.total, limit: page.limit, offset: page.offset, categories: page.categories, items: page.items.map(plugin => ({
+        repository: plugin.repository, name: plugin.name, description: plugin.description,
+        categories: plugin.categories, stars: plugin.stars, stars7dDelta: plugin.stars7dDelta,
+        rank: Math.max(0, 1000 - plugin.overallScore),
+      })) })
+    } catch (error) { sendJson(res, 502, { error: error instanceof Error ? error.message : String(error) }) }
+  } }), 'dsh-store: catalog route')
+
+  ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/api/plugin-store/install', handler: async (req, res) => {
+    if (req.method !== 'POST') return sendJson(res, 405, { error: 'Method not allowed' })
+    try {
+      const body = await readBody(req) as { repository?: unknown }
+      const repository = typeof body.repository === 'string' ? body.repository : ''
+      if (!/^[\w.-]+\/[\w.-]+$/.test(repository)) throw new Error('Invalid GitHub repository')
+      if (!knownCatalogRepositories.has(repository)) throw new Error('Load this repository from the community catalog before installing it')
+      await installRepository(repository)
+      sendJson(res, 200, { ok: true })
+    } catch (error) { sendJson(res, 400, { error: error instanceof Error ? error.message : String(error) }) }
+  } }), 'dsh-store: install route')
 
   void (async () => {
     // ── store_search ──
@@ -84,7 +220,7 @@ export function apply(ctx: Context, config: Config = {}) {
       parameters: {
         query: { type: 'string', required: true, description: 'Search query — matches plugin name and description.' },
         category: { type: 'string', description: 'Filter by category (e.g., "UI Enhancements", "Dev Tools", "Productivity").' },
-        limit: { type: 'number', description: 'Max results (default 10).', minimum: 1, maximum: 25 },
+        limit: { type: 'number', description: 'Max results (default 10).' },
       },
       output: {
         schema: { type: 'string' },
@@ -92,7 +228,7 @@ export function apply(ctx: Context, config: Config = {}) {
       },
       async execute(args: any, _exec: any) {
         try {
-          const catalog = await getCatalog(catalogUrl)
+          const catalog = await getCatalog(catalogUrl, timeoutMs)
           const q = String(args.query || '').toLowerCase()
           const cat = args.category ? String(args.category).toLowerCase() : ''
           let results = catalog.catalog.filter((p: StorePlugin) => {
@@ -101,7 +237,7 @@ export function apply(ctx: Context, config: Config = {}) {
             return matchQ && matchCat
           })
           results.sort((a: StorePlugin, b: StorePlugin) => b.overallScore - a.overallScore)
-          const limit = args.limit || 10
+          const limit = Math.min(25, Math.max(1, Number(args.limit) || 10))
           results = results.slice(0, limit)
 
           const lines = [`# Plugin Store Search: "${args.query}"`, `Found ${results.length} plugin(s):\n`]
@@ -129,7 +265,7 @@ export function apply(ctx: Context, config: Config = {}) {
       parameters: {
         category: { type: 'string', description: 'Filter by category (e.g., "UI Enhancements", "Dev Tools"). Leave empty for all.' },
         sort: { type: 'string', description: 'Sort by: "score" (default), "stars", "newest".', enum: ['score', 'stars', 'newest'] },
-        limit: { type: 'number', description: 'Max results (default 20).', minimum: 1, maximum: 50 },
+        limit: { type: 'number', description: 'Max results (default 20).' },
       },
       output: {
         schema: { type: 'string' },
@@ -137,7 +273,7 @@ export function apply(ctx: Context, config: Config = {}) {
       },
       async execute(args: any, _exec: any) {
         try {
-          const catalog = await getCatalog(catalogUrl)
+          const catalog = await getCatalog(catalogUrl, timeoutMs)
           const cat = args.category ? String(args.category).toLowerCase() : ''
           let results = catalog.catalog.filter((p: StorePlugin) => {
             return !cat || p.categories?.some((c: string) => c.toLowerCase() === cat)
@@ -148,7 +284,7 @@ export function apply(ctx: Context, config: Config = {}) {
             case 'newest': results.sort((a: StorePlugin, b: StorePlugin) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); break
             default: results.sort((a: StorePlugin, b: StorePlugin) => b.overallScore - a.overallScore)
           }
-          const limit = args.limit || 20
+          const limit = Math.min(50, Math.max(1, Number(args.limit) || 20))
           results = results.slice(0, limit)
 
           const total = catalog.metrics?.pluginsTracked ?? catalog.catalog.length
@@ -179,7 +315,7 @@ export function apply(ctx: Context, config: Config = {}) {
       },
       async execute(args: any, _exec: any) {
         try {
-          const catalog = await getCatalog(catalogUrl)
+          const catalog = await getCatalog(catalogUrl, timeoutMs)
           const q = String(args.name).toLowerCase()
           const plugin = catalog.catalog.find((p: StorePlugin) =>
             p.name.toLowerCase() === q ||

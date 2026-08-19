@@ -1,17 +1,21 @@
 {
-  "extends": "../../../tsconfig.base.json",
+  "extends": "../../../tsconfig.base.client.json",
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "lib/types",
-    "composite": true
+    "types": ["node"]
   },
   "include": ["src"],
   "references": [
     { "path": "../../../vendor/cordis" },
     { "path": "../../../vendor/schemastery" },
     { "path": "../../core/tools" },
-    { "path": "../../core/system-prompt" },
     { "path": "../../web/web" },
-    { "path": "../shared" }
+    { "path": "../../host/webserver" },
+    { "path": "../../api/remotes/tsconfig.client.json" },
+    { "path": "../../client/runtime" },
+    { "path": "../../client/locale" },
+    { "path": "../../client/ui-settings" },
+    { "path": "../../client/ui-slots" }
   ]
 }

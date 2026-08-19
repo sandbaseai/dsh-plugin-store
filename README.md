@@ -2,6 +2,8 @@
 
 > A native plugin marketplace for DeepSeek Harness.
 
+[简体中文](README.zh.md)
+
 [![GitHub stars](https://img.shields.io/github/stars/sandbaseai/dsh-plugin-store?style=flat-square)](https://github.com/sandbaseai/dsh-plugin-store/stargazers)
 [![DeepSeek Harness](https://img.shields.io/badge/DeepSeek-Harness-2563eb?style=flat-square)](https://github.com/deepseek-ai/deepseek-harness)
 [![Catalog](https://img.shields.io/badge/catalog-2%2C900%2B_plugins-111827?style=flat-square)](https://dshpluginleaderboard.com/)
@@ -56,7 +58,19 @@ The hosted catalog remains available while the native integration is finalized a
 
 ## Development installation
 
-DeepSeek Harness is evolving rapidly. For the current source integration, add this plugin to a Harness checkout and enable it in the Web profile:
+DeepSeek Harness is evolving rapidly. For the current source integration, clone
+this repository into a Harness checkout, install the workspace, and build the
+host and Web client faces:
+
+```bash
+cd /path/to/deepseek-harness
+git clone https://github.com/sandbaseai/dsh-plugin-store.git packages/plugins/dsh-store
+pnpm install
+pnpm --filter @sandbaseai/dsh-plugin-store typecheck
+pnpm --filter @sandbaseai/dsh-plugin-store bundle
+```
+
+Then enable the bundle in the Web profile:
 
 ```yaml
 - name: '@sandbaseai/dsh-plugin-store'
@@ -66,7 +80,9 @@ DeepSeek Harness is evolving rapidly. For the current source integration, add th
     timeoutMs: 30000
 ```
 
-The stable package installation command will be documented after the public DSH package versions catch up with the `rc.5` integration APIs.
+The stable package installation command will be documented after the public DSH
+package versions catch up with the `rc.5` integration APIs. Until then, the
+source-checkout path above is the reproducible development route.
 
 ## Architecture
 
