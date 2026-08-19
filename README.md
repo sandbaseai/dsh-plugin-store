@@ -5,7 +5,7 @@
 [简体中文](README.zh.md)
 
 [![GitHub stars](https://img.shields.io/github/stars/sandbaseai/dsh-plugin-store?style=flat-square)](https://github.com/sandbaseai/dsh-plugin-store/stargazers)
-[![Preview release](https://img.shields.io/github/v/release/sandbaseai/dsh-plugin-store?include_prereleases&style=flat-square&label=preview)](https://github.com/sandbaseai/dsh-plugin-store/releases/tag/v0.1.0-preview.1)
+[![Preview release](https://img.shields.io/github/v/release/sandbaseai/dsh-plugin-store?include_prereleases&style=flat-square&label=preview)](https://github.com/sandbaseai/dsh-plugin-store/releases/tag/v0.1.0-preview.2)
 [![DeepSeek Harness](https://img.shields.io/badge/DeepSeek-Harness-2563eb?style=flat-square)](https://github.com/deepseek-ai/deepseek-harness)
 [![Catalog](https://img.shields.io/badge/catalog-2%2C900%2B_plugins-111827?style=flat-square)](https://dshpluginleaderboard.com/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-16a34a?style=flat-square)](LICENSE)
@@ -16,7 +16,7 @@
 
 DSH Plugin Store turns the growing DeepSeek Harness plugin ecosystem into a searchable product experience. It uses live catalog data from [DSH Plugin Leaderboard](https://dshpluginleaderboard.com/) and adds Agent tools for programmatic discovery.
 
-[Preview release](https://github.com/sandbaseai/dsh-plugin-store/releases/tag/v0.1.0-preview.1) · [Open the catalog](https://dshpluginleaderboard.com/) · [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) · [Report an issue](https://github.com/sandbaseai/dsh-plugin-store/issues)
+[Preview release](https://github.com/sandbaseai/dsh-plugin-store/releases/tag/v0.1.0-preview.2) · [Open the catalog](https://dshpluginleaderboard.com/) · [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) · [Report an issue](https://github.com/sandbaseai/dsh-plugin-store/issues)
 
 ## What it solves
 
