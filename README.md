@@ -18,6 +18,18 @@ DSH Plugin Store turns the growing DeepSeek Harness plugin ecosystem into a sear
 
 [Preview release](https://github.com/sandbaseai/dsh-plugin-store/releases/tag/v0.1.0-preview.2) · [Open the catalog](https://dshpluginleaderboard.com/) · [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) · [Report an issue](https://github.com/sandbaseai/dsh-plugin-store/issues)
 
+## Try the preview
+
+Install the GitHub release into your local DSH Web profile:
+
+```bash
+dsh plugin --profile web add github:sandbaseai/dsh-plugin-store
+```
+
+Restart DSH Web, open **Settings**, and select **Store**. This is a preview
+integration: review the source before installation and use the development
+route below if you need a fully reproducible source-workspace build.
+
 ## What it solves
 
 The DSH ecosystem is growing quickly, but finding a plugin still means searching GitHub, checking compatibility, and copying install commands by hand. DSH Plugin Store creates one discovery layer for developers and agents.
@@ -57,7 +69,7 @@ The hosted catalog remains available while the native integration is finalized a
 | `store_catalog` | Browse and rank catalog entries. |
 | `store_install` | Return reviewed installation instructions. |
 
-## Development installation
+## Reproducible development installation
 
 DeepSeek Harness is evolving rapidly. For the current source integration, clone
 this repository into a Harness checkout, install the workspace, and build the
@@ -81,9 +93,10 @@ Then enable the bundle in the Web profile:
     timeoutMs: 30000
 ```
 
-The stable package installation command will be documented after the public DSH
-package versions catch up with the `rc.5` integration APIs. Until then, the
-source-checkout path above is the reproducible development route.
+The GitHub preview command installs the committed Host and Web client artifacts.
+A stable npm package command will be documented after the public DSH package
+versions catch up with the `rc.5` integration APIs. Until then, the
+source-checkout path above remains the reproducible development route.
 
 ## Architecture
 

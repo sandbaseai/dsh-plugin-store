@@ -18,6 +18,16 @@
 
 ## 安装
 
+将 GitHub Preview 安装到本地 DSH Web profile：
+
+```bash
+dsh plugin --profile web add github:sandbaseai/dsh-plugin-store
+```
+
+重启 DSH Web 后打开 **Settings → Store**。当前仍是预览集成；安装前请检查源码。如果需要完整可复现的源码工作区构建，请使用下面的开发安装方式。
+
+## 可复现的开发安装
+
 当前原生集成面向 DeepSeek Harness `0.1.0-rc.5` 源码工作区。请先将本仓库克隆到 Harness checkout，再构建 Host 与 Web client：
 
 ```bash
@@ -31,7 +41,7 @@ dsh web
 
 启动后打开 DSH Settings，选择 **Store**。
 
-等公开 DSH package 版本与当前集成 API 对齐后，再提供稳定 package 安装命令；目前不应把 `dsh plugin add` 描述为已经验证的稳定路径。
+GitHub Preview 命令安装仓库中已提交的 Host 与 Web client 构建产物。等公开 DSH package 版本与当前集成 API 对齐后，再提供稳定 npm package 安装命令；源码 checkout 仍是当前可复现的开发集成路径。
 
 ## 配置
 
