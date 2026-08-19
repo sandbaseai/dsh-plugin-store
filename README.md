@@ -1,34 +1,116 @@
 # DSH Plugin Store
 
-> 在 DeepSeek Harness 里直接浏览和安装插件
+> A native plugin marketplace for DeepSeek Harness.
 
-## Web UI
+[![GitHub stars](https://img.shields.io/github/stars/sandbaseai/dsh-plugin-store?style=flat-square)](https://github.com/sandbaseai/dsh-plugin-store/stargazers)
+[![DeepSeek Harness](https://img.shields.io/badge/DeepSeek-Harness-2563eb?style=flat-square)](https://github.com/deepseek-ai/deepseek-harness)
+[![Catalog](https://img.shields.io/badge/catalog-2%2C900%2B_plugins-111827?style=flat-square)](https://dshpluginleaderboard.com/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-16a34a?style=flat-square)](LICENSE)
 
-🌐 **[sandbaseai.github.io/dsh-plugin-store](https://sandbaseai.github.io/dsh-plugin-store)**
+![DSH Plugin Store: Discover. Install. Extend.](assets/dsh-plugin-store-social-preview.png)
 
-完全复刻 [dshpluginleaderboard.com](https://dshpluginleaderboard.com) 的设计，展示 Sandbase 出品的 102 个 Cordis 插件。
+**Discover, filter, install, and manage community plugins without leaving DeepSeek Harness.**
 
-## 安装
+DSH Plugin Store turns the growing DeepSeek Harness plugin ecosystem into a searchable product experience. It uses live catalog data from [DSH Plugin Leaderboard](https://dshpluginleaderboard.com/) and adds Agent tools for programmatic discovery.
 
-```bash
-pnpm add @sandbaseai/dsh-plugin-store
-```
+[Open the catalog](https://dshpluginleaderboard.com/) · [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) · [Report an issue](https://github.com/sandbaseai/dsh-plugin-store/issues)
 
-在 `cordis.patch.yml` 中启用：
+## What it solves
+
+The DSH ecosystem is growing quickly, but finding a plugin still means searching GitHub, checking compatibility, and copying install commands by hand. DSH Plugin Store creates one discovery layer for developers and agents.
+
+- Browse more than 2,900 community plugin repositories
+- Search by name, repository, description, or category
+- Filter with the complete leaderboard tag taxonomy
+- Sort by leaderboard rank, GitHub stars, or weekly growth
+- Install catalog entries into a local DSH Web profile
+- Inspect plugins already loaded by Cordis
+- Let agents search the same catalog through native tools
+
+## Native Store experience
+
+The current native Settings integration is being developed with the DeepSeek Harness `0.1.0-rc.5` source tree and is prepared for upstream collaboration. It includes:
+
+- `Community` and `Installed` tabs
+- Server-side tag filtering and pagination
+- Same-origin catalog proxy without browser CORS dependency
+- Local profile installation with validation and error feedback
+- Live Cordis Loader inventory
+- Responsive light and dark UI
+
+The hosted catalog remains available while the native integration is finalized against the public Harness package release.
+
+## Agent tools
+
+| Tool | Purpose |
+| --- | --- |
+| `store_search` | Search by name, description, and category. |
+| `store_catalog` | Browse and rank catalog entries. |
+| `store_install` | Return reviewed installation instructions. |
+
+## Development installation
+
+DeepSeek Harness is evolving rapidly. For the current source integration, add this plugin to a Harness checkout and enable it in the Web profile:
 
 ```yaml
 - name: '@sandbaseai/dsh-plugin-store'
   config:
     enabled: true
     catalogUrl: https://dshpluginleaderboard.com/api/catalog
+    timeoutMs: 30000
 ```
 
-## 工具
+The stable package installation command will be documented after the public DSH package versions catch up with the `rc.5` integration APIs.
 
-| 工具 | 功能 |
-|------|------|
-| `store_search` | 搜索插件（按名称/描述/分类） |
-| `store_catalog` | 浏览完整目录，按评分/星标/最新排序 |
-| `store_install` | 获取任意插件的安装命令 |
+## Architecture
 
-启用后 Agent 可以直接调用这些工具从 leaderboard 拉取数据。
+```mermaid
+flowchart LR
+  Catalog[Leaderboard API] --> Host[Store Host plugin]
+  Host --> Tools[Agent tools]
+  Host --> Proxy[Same-origin catalog proxy]
+  Proxy --> UI[Native Store UI]
+  Inventory[Cordis plugin inventory] --> UI
+  UI --> Profile[Local DSH Web profile]
+```
+
+## Security
+
+Installing a plugin may download and execute third-party code, including package lifecycle scripts. Review source repositories before installation. Enterprise deployments should place the catalog behind an organizational review and allowlist process.
+
+The native installer validates GitHub repository identifiers and only accepts repositories returned by the configured catalog.
+
+## Roadmap
+
+- [x] Searchable community catalog
+- [x] Agent discovery tools
+- [x] Native Community and Installed tabs
+- [x] Tag filters, sorting, and pagination
+- [x] Local Web profile installer
+- [ ] Upstream review with DeepSeek Harness
+- [ ] Stable npm release aligned with public DSH packages
+- [ ] Update, disable, and uninstall workflows
+- [ ] Enterprise catalog allowlists and audit events
+
+## Help us reach 100 stars
+
+If a native plugin marketplace would make DeepSeek Harness more useful for you, [star this repository](https://github.com/sandbaseai/dsh-plugin-store) and share one plugin workflow you want supported.
+
+We are looking for:
+
+- Plugin authors who want better distribution
+- Harness users willing to test the native Store
+- Enterprise teams with private catalog and audit requirements
+
+Open an [issue](https://github.com/sandbaseai/dsh-plugin-store/issues) or join the discussion through the repository.
+
+## Related projects
+
+- [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)
+- [DSH Plugin Leaderboard](https://dshpluginleaderboard.com/)
+- [Sandbase Harness](https://github.com/sandbaseai/sandbase-harness)
+- [DeepSeek Harness Handbook](https://github.com/sandbaseai/deepseek-harness-handbook)
+
+## License
+
+MIT
