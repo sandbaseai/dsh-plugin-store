@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DSH Plugin Store | Native marketplace for DeepSeek Harness</title>
+    <meta name="description" content="Discover, filter, install, and manage 2,900+ community plugins without leaving DeepSeek Harness.">
+    <meta name="theme-color" content="#f7f8fa" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#101217" media="(prefers-color-scheme: dark)">
+    <link rel="icon" type="image/png" href="assets/dsh-plugin-store-social-preview.png">
+    <link rel="canonical" href="https://sandbaseai.github.io/dsh-plugin-store/">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="DSH Plugin Store">
+    <meta property="og:description" content="A native plugin marketplace for DeepSeek Harness.">
+    <meta property="og:url" content="https://sandbaseai.github.io/dsh-plugin-store/">
+    <meta property="og:image" content="https://raw.githubusercontent.com/sandbaseai/dsh-plugin-store/main/docs/assets/dsh-plugin-store-social-preview.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "DSH Plugin Store",
+        "description": "Native plugin marketplace for discovering, filtering, installing, and managing DeepSeek Harness plugins.",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Cross-platform",
+        "softwareVersion": "0.1.0-preview.2",
+        "codeRepository": "https://github.com/sandbaseai/dsh-plugin-store",
+        "downloadUrl": "https://github.com/sandbaseai/dsh-plugin-store/releases/tag/v0.1.0-preview.2",
+        "license": "https://opensource.org/license/mit",
+        "author": {
+          "@type": "Organization",
+          "name": "SandbaseAI",
+          "url": "https://github.com/sandbaseai"
+        }
+      }
+    </script>
+    <script>
+      if (new URLSearchParams(location.search).get('theme') === 'dark') {
+        document.documentElement.dataset.theme = 'dark';
+      }
+    </script>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="DSH Plugin Store home">
+        <span class="brand-mark" aria-hidden="true">S</span>
+        <span>DSH Plugin Store</span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="#product">Product</a>
+        <a href="#install">Install</a>
+        <a href="https://github.com/sandbaseai/dsh-plugin-store">GitHub</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">Built by SandbaseAI for DeepSeek Harness</p>
+          <h1 id="hero-title">Plugins, inside your Harness.</h1>
+          <p class="hero-summary">Discover and install 2,900+ community plugins from a native Store.</p>
+          <div class="hero-actions">
+            <a class="button primary" href="https://github.com/sandbaseai/dsh-plugin-store">Star on GitHub</a>
+            <a class="button secondary" href="#install">Install preview</a>
+          </div>
+        </div>
+        <figure class="hero-visual">
+          <img src="assets/dsh-plugin-store-community-view.png" width="1260" height="1292" alt="DSH Plugin Store Community view with search, tag filtering, sorting, and plugin results">
+          <figcaption>Native Community view in DSH Settings</figcaption>
+        </figure>
+      </section>
+
+      <section class="proof" aria-label="Project facts">
+        <div><strong>2,900+</strong><span>community plugins</span></div>
+        <div><strong>2 views</strong><span>Community and Installed</span></div>
+        <div><strong>3 tools</strong><span>for agent discovery</span></div>
+        <div><strong>MIT</strong><span>open source</span></div>
+      </section>
+
+      <section class="product" id="product" aria-labelledby="product-title">
+        <div class="section-intro">
+          <h2 id="product-title">Discovery that stays in context.</h2>
+          <p>Search the live catalog, narrow it with server-side tags, inspect source, and install into the active Web profile.</p>
+        </div>
+        <div class="capabilities">
+          <article class="capability capability-wide">
+            <h3>Find the right plugin</h3>
+            <p>Search names, repositories, descriptions, and categories. Sort by rank, stars, or weekly growth.</p>
+          </article>
+          <article class="capability">
+            <h3>Install with feedback</h3>
+            <p>Validate catalog entries and return clear local installation results.</p>
+          </article>
+          <article class="capability capability-dark">
+            <h3>Share discovery with agents</h3>
+            <p>Native tools expose search, browsing, and reviewed install instructions.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="install" id="install" aria-labelledby="install-title">
+        <div>
+          <h2 id="install-title">Try the GitHub preview.</h2>
+          <p>Install into your local DSH Web profile, restart DSH Web, then open Settings and select Store.</p>
+        </div>
+        <div class="command-wrap">
+          <code id="install-command">dsh plugin --profile web add github:sandbaseai/dsh-plugin-store</code>
+          <button id="copy-command" type="button" aria-describedby="copy-status">Copy</button>
+          <span id="copy-status" class="sr-only" aria-live="polite"></span>
+        </div>
+        <p class="install-note">Preview integration. Review third-party plugin source before installation.</p>
+      </section>
+
+      <section class="final-cta" aria-labelledby="cta-title">
+        <img src="assets/dsh-plugin-store-social-preview.png" width="1774" height="887" alt="DSH Plugin Store: Discover, install, extend">
+        <div>
+          <h2 id="cta-title">Help build the native DSH marketplace.</h2>
+          <p>Test the Store, report compatibility, or share the plugin workflow your team needs.</p>
+          <a class="button primary" href="https://github.com/sandbaseai/dsh-plugin-store">Star the repository</a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>Open source by SandbaseAI</span>
+      <div>
+        <a href="https://github.com/sandbaseai/dsh-plugin-store/releases/tag/v0.1.0-preview.2">Release</a>
+        <a href="https://github.com/sandbaseai/dsh-plugin-store/security/policy">Security</a>
+        <a href="https://github.com/sandbaseai/dsh-plugin-store/issues">Issues</a>
+      </div>
+    </footer>
+
+    <script>
+      const copyButton = document.querySelector('#copy-command');
+      const command = document.querySelector('#install-command');
+      const status = document.querySelector('#copy-status');
+
+      copyButton.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(command.textContent);
+          copyButton.textContent = 'Copied';
+          status.textContent = 'Install command copied to clipboard.';
+          window.setTimeout(() => {
+            copyButton.textContent = 'Copy';
+          }, 1800);
+        } catch {
+          status.textContent = 'Copy failed. Select the command and copy it manually.';
+        }
+      });
+    </script>
+  </body>
+</html>
