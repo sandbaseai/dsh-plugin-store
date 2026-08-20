@@ -300,6 +300,51 @@ h2 {
   color: #b8c0cf;
 }
 
+.ecosystem {
+  border-top: 1px solid var(--line);
+  padding-block: 112px;
+}
+
+.ecosystem-links {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 52px;
+}
+
+.ecosystem-links a {
+  min-height: 156px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px;
+  background: var(--surface);
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.ecosystem-links a:hover {
+  border-color: var(--muted);
+  transform: translateY(-2px);
+}
+
+.ecosystem-links span,
+.ecosystem-note {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.ecosystem-links strong {
+  font-size: 18px;
+  letter-spacing: -0.025em;
+}
+
+.ecosystem-note {
+  max-width: 760px;
+  margin: 22px 0 0;
+}
+
 .install {
   display: grid;
   grid-template-columns: 0.9fr 1.1fr;
@@ -506,6 +551,15 @@ html[data-theme="dark"] .hero-visual img {
   .capabilities {
     grid-template-columns: 1fr;
     margin-top: 44px;
+  }
+
+  .ecosystem {
+    padding-block: 88px;
+  }
+
+  .ecosystem-links {
+    grid-template-columns: 1fr;
+    margin-top: 40px;
   }
 
   .capability-wide {
