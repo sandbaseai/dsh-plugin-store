@@ -42,7 +42,7 @@ DeepSeek Harness uses Cordis and treats almost everything as a plugin. The ecosy
 
 We built DSH Plugin Store to provide a native Community and Installed experience inside the Harness Web UI. The catalog supports server-side tag filters, leaderboard ranking, pagination, local profile installation, and Agent tools for programmatic discovery. Catalog data currently covers more than 4,000 plugin packages across 3,400 repositories.
 
-Preview 4 targets the public Harness rc.8 package boundary, uses the rc.8 insert patch schema, and ships committed Host/Web artifacts plus an install-tested release tarball. We are sharing it early because we want feedback from plugin authors and users before finalizing a stable package release.
+Preview 5 targets the public Harness rc.8 package boundary, uses the rc.8 insert patch schema, and limits one-click installation to Leaderboard runtime-verified npm package specs. We are sharing it early because we want feedback from plugin authors and users before finalizing a stable package release.
 
 Repo: https://github.com/sandbaseai/dsh-plugin-store
 

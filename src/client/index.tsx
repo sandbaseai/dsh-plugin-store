@@ -13,6 +13,7 @@ interface CommunityPlugin {
   stars: number
   stars7dDelta: number
   rank: number
+  verificationStatus: string
 }
 
 type CatalogState = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; items: CommunityPlugin[]; total: number; categories: string[] }
@@ -105,11 +106,12 @@ function StoreSection({ listInstalled }: { listInstalled: () => Promise<Inventor
         <div className={css.summary}><span><strong>{catalog.items.length.toLocaleString()}</strong> of {catalog.total.toLocaleString()} plugins loaded</span>{normalized || category ? <span>{visible.length.toLocaleString()} matches</span> : null}</div>
         {visible.length === 0 ? <p className={css.state}>No matching plugins.</p> : <ul className={css.grid}>{visible.map(plugin => {
           const isInstalled = installedNames.has(plugin.name.toLocaleLowerCase()) || installedNames.has(plugin.repository.toLocaleLowerCase())
+          const isVerified = plugin.verificationStatus === 'verified'
           return <li className={css.card} key={plugin.repository}>
             <span className={css.rank}>#{plugin.rank || '-'}</span>
             <div className={css.plugin}><div className={css.titleLine}><h3>{plugin.name}</h3><code>{plugin.repository}</code></div><p>{plugin.description || 'No description available.'}</p><div className={css.tags}>{plugin.categories.slice(0, 2).map(category => <span key={category}>{category}</span>)}</div></div>
             <div className={css.metrics}><strong>{plugin.stars.toLocaleString()}</strong><span>stars</span>{plugin.stars7dDelta > 0 ? <small>+{plugin.stars7dDelta.toLocaleString()} this week</small> : null}</div>
-            <div className={css.actions}><a href={`https://github.com/${plugin.repository}`} target="_blank" rel="noreferrer">Source</a><button type="button" disabled={isInstalled || installing !== undefined} onClick={() => { void install(plugin) }}>{isInstalled ? 'Installed' : installing === plugin.repository ? 'Installing...' : 'Install'}</button></div>
+            <div className={css.actions}><a href={`https://github.com/${plugin.repository}`} target="_blank" rel="noreferrer">Source</a><button type="button" disabled={isInstalled || !isVerified || installing !== undefined} title={isVerified ? 'Install the runtime-verified package' : 'Leaderboard runtime verification is required'} onClick={() => { void install(plugin) }}>{isInstalled ? 'Installed' : !isVerified ? 'Unverified' : installing === plugin.repository ? 'Installing...' : 'Install'}</button></div>
           </li>
         })}</ul>}
         {catalog.items.length < catalog.total && normalized.length === 0 ? <div className={css.loadMore}><button type="button" disabled={loadingMore} onClick={() => { void loadMore() }}>{loadingMore ? 'Loading…' : 'Load more'}</button></div> : null}

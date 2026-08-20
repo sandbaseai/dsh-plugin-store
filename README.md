@@ -5,7 +5,7 @@
 [简体中文](README.zh.md)
 
 [![GitHub stars](https://img.shields.io/github/stars/sandbaseai/dsh-plugin-store?style=flat-square)](https://github.com/sandbaseai/dsh-plugin-store/stargazers)
-[![Preview release](https://img.shields.io/github/v/release/sandbaseai/dsh-plugin-store?include_prereleases&style=flat-square&label=preview)](https://github.com/sandbaseai/dsh-plugin-store/releases/tag/v0.1.0-preview.4)
+[![Preview release](https://img.shields.io/github/v/release/sandbaseai/dsh-plugin-store?include_prereleases&style=flat-square&label=preview)](https://github.com/sandbaseai/dsh-plugin-store/releases/tag/v0.1.0-preview.5)
 [![DeepSeek Harness](https://img.shields.io/badge/DeepSeek-Harness-2563eb?style=flat-square)](https://github.com/deepseek-ai/deepseek-harness)
 [![DSH Plugin Leaderboard](https://img.shields.io/badge/DSH_Leaderboard-listed-111827?style=flat-square)](https://dshpluginleaderboard.com/plugins/sandbaseai-dsh-plugin-store)
 [![Catalog](https://img.shields.io/badge/catalog-4%2C000%2B_packages-111827?style=flat-square)](https://dshpluginleaderboard.com/)
@@ -17,16 +17,16 @@
 
 DSH Plugin Store turns the growing DeepSeek Harness plugin ecosystem into a searchable product experience. It uses live catalog data from [DSH Plugin Leaderboard](https://dshpluginleaderboard.com/) and adds Agent tools for programmatic discovery.
 
-[Preview release](https://github.com/sandbaseai/dsh-plugin-store/releases/tag/v0.1.0-preview.4) · [Leaderboard listing](https://dshpluginleaderboard.com/plugins/sandbaseai-dsh-plugin-store) · [Open the catalog](https://dshpluginleaderboard.com/) · [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) · [Report an issue](https://github.com/sandbaseai/dsh-plugin-store/issues)
+[Preview release](https://github.com/sandbaseai/dsh-plugin-store/releases/tag/v0.1.0-preview.5) · [Leaderboard listing](https://dshpluginleaderboard.com/plugins/sandbaseai-dsh-plugin-store) · [Open the catalog](https://dshpluginleaderboard.com/) · [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) · [Report an issue](https://github.com/sandbaseai/dsh-plugin-store/issues)
 
 ## Try the preview
 
-Install the prebuilt Preview 4 tarball into a public DeepSeek Harness
+Install the prebuilt Preview 5 tarball into a public DeepSeek Harness
 `0.1.0-rc.8` Web profile:
 
 ```bash
-curl -fL https://github.com/sandbaseai/dsh-plugin-store/releases/download/v0.1.0-preview.4/sandbaseai-dsh-plugin-store-0.1.0-preview.4.tgz -o /tmp/sandbaseai-dsh-plugin-store-0.1.0-preview.4.tgz
-dsh plugin --profile web add -w /tmp/sandbaseai-dsh-plugin-store-0.1.0-preview.4.tgz
+curl -fL https://github.com/sandbaseai/dsh-plugin-store/releases/download/v0.1.0-preview.5/sandbaseai-dsh-plugin-store-0.1.0-preview.5.tgz -o /tmp/sandbaseai-dsh-plugin-store-0.1.0-preview.5.tgz
+dsh plugin --profile web add -w /tmp/sandbaseai-dsh-plugin-store-0.1.0-preview.5.tgz
 ```
 
 The versioned tarball prevents a later change on `main` from silently changing
@@ -102,11 +102,12 @@ Then enable the bundle in the Web profile:
 ```
 
 The release tarball installs the committed Host and Web client artifacts.
-Preview 4 declares public rc.8 runtime peers and uses the rc.8 `insert` patch
-schema; its package graph, Host entrypoint, and composed profile configuration
-are verified in an isolated DSH environment. The source-checkout path above
-remains the development route for rebuilding artifacts inside the Harness
-workspace.
+Preview 5 declares public rc.8 runtime peers, uses the rc.8 `insert` patch
+schema, and installs only Leaderboard runtime-verified npm package specs. Its
+package graph, Host entrypoint, composed profile configuration, and Store-button
+installation path are verified in an isolated DSH environment. The
+source-checkout path above remains the development route for rebuilding
+artifacts inside the Harness workspace.
 
 ## Architecture
 
@@ -124,7 +125,7 @@ flowchart LR
 
 Installing a plugin may download and execute third-party code, including package lifecycle scripts. Review source repositories before installation. Enterprise deployments should place the catalog behind an organizational review and allowlist process.
 
-The native installer validates GitHub repository identifiers and only accepts repositories returned by the configured catalog.
+The native installer validates GitHub repository identifiers, requires the selected catalog entry to be runtime-verified, resolves its exact npm package spec from the Leaderboard detail API, and rejects URLs, git specs, shell syntax, and unverified entries.
 
 Report security issues through GitHub's
 [private vulnerability reporting](https://github.com/sandbaseai/dsh-plugin-store/security/advisories/new),

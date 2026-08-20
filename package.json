@@ -1,7 +1,7 @@
 {
   "name": "@sandbaseai/dsh-plugin-store",
   "description": "Native DeepSeek Harness plugin marketplace for discovering, filtering, installing, and managing community DSH plugins.",
-  "version": "0.1.0-preview.4",
+  "version": "0.1.0-preview.5",
   "keywords": [
     "deepseek-harness",
     "dsh",

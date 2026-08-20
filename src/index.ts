@@ -54,12 +54,14 @@ interface CatalogResponse {
 }
 
 interface LeaderboardItem {
+  href?: string
   repository: string
   description?: string
   categories?: string[]
   rank?: number
   stars?: number
   stars7dDelta?: number
+  installVerificationStatus?: string
 }
 
 interface LeaderboardResponse {
@@ -72,10 +74,18 @@ interface LeaderboardResponse {
   facets?: { categories?: string[] }
 }
 
+interface LeaderboardDetailResponse {
+  plugin?: {
+    repository?: string
+    installPath?: string
+    verificationStatus?: string
+  }
+}
+
 let cachedCatalog: CatalogResponse | null = null
 let cacheTime = 0
 const CACHE_TTL = 300_000
-const knownCatalogRepositories = new Set<string>()
+const knownCatalogRepositories = new Map<string, { href: string; verificationStatus: string }>()
 
 function handleUpstreamError(err: unknown, toolName: string): never {
   const message = err instanceof Error ? err.message : String(err)
@@ -98,8 +108,8 @@ async function getCatalog(catalogUrl: string, timeoutMs = 30_000): Promise<Catal
     repository: item.repository,
     description: item.description ?? '',
     categories: item.categories ?? [],
-    installPath: `dsh plugin --profile web add github:${item.repository}`,
-    verificationStatus: 'community',
+    installPath: '',
+    verificationStatus: item.installVerificationStatus ?? 'unknown',
     stars: item.stars ?? 0,
     forks: 0,
     overallScore: Math.max(0, 1000 - (item.rank ?? 1000)),
@@ -107,6 +117,14 @@ async function getCatalog(catalogUrl: string, timeoutMs = 30_000): Promise<Catal
     createdAt: '',
     updatedAt: '',
   }))
+  for (const item of raw.items ?? []) {
+    if (item.href?.startsWith('/plugins/') === true) {
+      knownCatalogRepositories.set(item.repository, {
+        href: item.href,
+        verificationStatus: item.installVerificationStatus ?? '',
+      })
+    }
+  }
   cachedCatalog = {
     catalog: source,
     metrics: { pluginsTracked: raw.metrics?.pluginsTracked ?? source.length },
@@ -129,12 +147,18 @@ async function getCatalogPage(catalogUrl: string, limit: number, offset: number,
   const items = raw.catalog ?? (raw.items ?? []).map((item): StorePlugin => ({
     id: item.repository, name: item.repository.split('/').at(-1) ?? item.repository,
     repository: item.repository, description: item.description ?? '', categories: item.categories ?? [],
-    installPath: `dsh plugin --profile web add github:${item.repository}`,
-    verificationStatus: 'community', stars: item.stars ?? 0, forks: 0,
+    installPath: '', verificationStatus: item.installVerificationStatus ?? 'unknown', stars: item.stars ?? 0, forks: 0,
     overallScore: Math.max(0, 1000 - (item.rank ?? 1000)), stars7dDelta: item.stars7dDelta ?? 0,
     createdAt: '', updatedAt: '',
   }))
-  for (const item of items) knownCatalogRepositories.add(item.repository)
+  for (const item of raw.items ?? []) {
+    if (item.href?.startsWith('/plugins/') === true) {
+      knownCatalogRepositories.set(item.repository, {
+        href: item.href,
+        verificationStatus: item.installVerificationStatus ?? '',
+      })
+    }
+  }
   return {
     items, total: raw.total ?? raw.metrics?.pluginsTracked ?? items.length,
     limit: raw.limit ?? limit, offset: raw.offset ?? offset,
@@ -159,7 +183,31 @@ async function readBody(req: import('node:http').IncomingMessage): Promise<unkno
   return JSON.parse(Buffer.concat(chunks).toString('utf8')) as unknown
 }
 
-async function installRepository(repository: string): Promise<void> {
+async function resolveInstallSpec(repository: string, catalogUrl: string, timeoutMs: number): Promise<string> {
+  const catalogEntry = knownCatalogRepositories.get(repository)
+  if (catalogEntry === undefined) throw new Error('Load this repository from the community catalog before installing it')
+  if (catalogEntry.verificationStatus !== 'verified') {
+    throw new Error('This plugin has not passed the leaderboard runtime installation check')
+  }
+  if (!/^\/plugins\/[a-z0-9-]+$/i.test(catalogEntry.href)) throw new Error('The catalog returned an invalid plugin detail path')
+
+  const detailUrl = new URL(`/api${catalogEntry.href}`, new URL(catalogUrl).origin)
+  const response = await fetch(detailUrl, { signal: AbortSignal.timeout(timeoutMs) })
+  if (!response.ok) throw new Error(`Plugin detail fetch failed: HTTP ${response.status}`)
+  const detail = await response.json() as LeaderboardDetailResponse
+  const plugin = detail.plugin
+  if (plugin?.repository !== repository) throw new Error('Plugin detail does not match the selected repository')
+  if (plugin.verificationStatus !== 'runtime_verified') throw new Error('This plugin is not runtime-verified')
+
+  const match = /^dsh plugin --profile web add ([^\s]+)$/.exec(plugin.installPath ?? '')
+  const spec = match?.[1]
+  if (spec === undefined || !/^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*(?:@[a-z0-9][a-z0-9._+-]*)?$/i.test(spec)) {
+    throw new Error('The verified install command is not a supported npm package spec')
+  }
+  return spec
+}
+
+async function installPackage(spec: string): Promise<void> {
   const entry = process.argv[1]
   if (entry === undefined) throw new Error('Cannot resolve the current DSH entrypoint')
   await new Promise<void>((resolve, reject) => {
@@ -167,14 +215,19 @@ async function installRepository(repository: string): Promise<void> {
     // loader. Reuse that loader for the child; a packaged .js entry needs no
     // loader and must not depend on tsx being installed globally.
     const entryArgs = entry.endsWith('.ts') ? ['--import', 'tsx/esm', entry] : [entry]
-    const child = spawn(process.execPath, [...entryArgs, 'plugin', '--profile', 'web', 'add', `github:${repository}`], {
+    const child = spawn(process.execPath, [...entryArgs, 'plugin', '--profile', 'web', 'add', '-w', spec], {
       cwd: process.cwd(), env: process.env, stdio: ['ignore', 'pipe', 'pipe'],
     })
     let output = ''
-    child.stdout.on('data', chunk => { output += String(chunk) })
-    child.stderr.on('data', chunk => { output += String(chunk) })
-    child.once('error', reject)
-    child.once('close', code => { code === 0 ? resolve() : reject(new Error(output.trim() || `Installer exited with code ${String(code)}`)) })
+    const append = (chunk: unknown) => { output = `${output}${String(chunk)}`.slice(-65_536) }
+    child.stdout.on('data', append)
+    child.stderr.on('data', append)
+    const timer = setTimeout(() => { child.kill('SIGTERM') }, 120_000)
+    child.once('error', error => { clearTimeout(timer); reject(error) })
+    child.once('close', code => {
+      clearTimeout(timer)
+      code === 0 ? resolve() : reject(new Error(output.trim() || `Installer exited with code ${String(code)}`))
+    })
   })
 }
 
@@ -195,7 +248,7 @@ export function apply(ctx: Context, config: Config = {}) {
       sendJson(res, 200, { total: page.total, limit: page.limit, offset: page.offset, categories: page.categories, items: page.items.map(plugin => ({
         repository: plugin.repository, name: plugin.name, description: plugin.description,
         categories: plugin.categories, stars: plugin.stars, stars7dDelta: plugin.stars7dDelta,
-        rank: Math.max(0, 1000 - plugin.overallScore),
+        rank: Math.max(0, 1000 - plugin.overallScore), verificationStatus: plugin.verificationStatus,
       })) })
     } catch (error) { sendJson(res, 502, { error: error instanceof Error ? error.message : String(error) }) }
   } }), 'dsh-store: catalog route')
@@ -206,9 +259,9 @@ export function apply(ctx: Context, config: Config = {}) {
       const body = await readBody(req) as { repository?: unknown }
       const repository = typeof body.repository === 'string' ? body.repository : ''
       if (!/^[\w.-]+\/[\w.-]+$/.test(repository)) throw new Error('Invalid GitHub repository')
-      if (!knownCatalogRepositories.has(repository)) throw new Error('Load this repository from the community catalog before installing it')
-      await installRepository(repository)
-      sendJson(res, 200, { ok: true })
+      const spec = await resolveInstallSpec(repository, catalogUrl, timeoutMs)
+      await installPackage(spec)
+      sendJson(res, 200, { ok: true, package: spec })
     } catch (error) { sendJson(res, 400, { error: error instanceof Error ? error.message : String(error) }) }
   } }), 'dsh-store: install route')
 
@@ -246,7 +299,7 @@ export function apply(ctx: Context, config: Config = {}) {
             lines.push(`- **Repository**: ${p.repository}`)
             lines.push(`- **Description**: ${p.description}`)
             lines.push(`- **Categories**: ${p.categories?.join(', ') || 'None'}`)
-            lines.push(`- **Install**: \`${p.installPath || `dsh plugin --profile web add github:${p.repository}`}\``)
+            lines.push(`- **Install**: Open **Settings → Store**; installation is enabled only after runtime verification.`)
             lines.push(`- **Status**: ${p.verificationStatus}`)
             lines.push('')
           }
@@ -291,7 +344,7 @@ export function apply(ctx: Context, config: Config = {}) {
           const lines = [`# Plugin Store Catalog`, `Total: ${total} plugins | Showing: ${results.length}\n`]
           for (const p of results) {
             lines.push(`- **${p.name}** Stars:${p.stars} | Score:${p.overallScore.toFixed(0)} | ${p.description}`)
-            lines.push(`  Install: \`${p.installPath || `dsh plugin --profile web add github:${p.repository}`}\``)
+            lines.push(`  Install: Open Settings → Store (runtime verification required)`)
             lines.push(`  Categories: ${p.categories?.join(', ') || 'None'}\n`)
           }
           return lines.join('\n')
@@ -327,14 +380,15 @@ export function apply(ctx: Context, config: Config = {}) {
             return `Plugin "${args.name}" not found in the store. Try store_search to find plugins.`
           }
 
-          const installCmd = plugin.installPath || `dsh plugin --profile web add github:${plugin.repository}`
+          const spec = await resolveInstallSpec(plugin.repository, catalogUrl, timeoutMs)
+          const installCmd = `dsh plugin --profile web add -w ${spec}`
           return [
             `# ${plugin.name}`,
             `**Description**: ${plugin.description}`,
             `**Repository**: https://github.com/${plugin.repository}`,
             `**Stars**: ${plugin.stars} (+${plugin.stars7dDelta} this week)`,
             `**Score**: ${plugin.overallScore.toFixed(0)}/100`,
-            `**Status**: ${plugin.verificationStatus}`,
+            `**Status**: runtime verified`,
             '',
             `## Install`,
             '```bash',
