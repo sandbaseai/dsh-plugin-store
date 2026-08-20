@@ -156,6 +156,16 @@ We are looking for:
 
 Open an [issue](https://github.com/sandbaseai/dsh-plugin-store/issues) or join the discussion through the repository.
 
+## Ecosystem validation
+
+The Store is independently discoverable in community-maintained DeepSeek Harness directories:
+
+- [awesome-deepseek-harness — Plugin Ecosystem & Development](https://github.com/0xsline/awesome-deepseek-harness#plugin-ecosystem--development)
+- [awesome-dsh-plugin — Development & Runtime](https://github.com/beancookie/awesome-dsh-plugin)
+- [DSH Plugin Leaderboard](https://dshpluginleaderboard.com/plugins/sandbaseai-dsh-plugin-store)
+
+These listings improve discovery; they are not security endorsements. Install eligibility is determined by the Store's runtime-verification and package-provenance checks.
+
 ## Related projects
 
 - [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)

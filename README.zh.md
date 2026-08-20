@@ -94,6 +94,16 @@ pnpm --dir packages/plugins/dsh-store run bundle
 pnpm dsh web
 ```
 
+## 生态验证
+
+本项目已被以下社区维护的 DeepSeek Harness 目录独立收录：
+
+- [awesome-deepseek-harness — Plugin Ecosystem & Development](https://github.com/0xsline/awesome-deepseek-harness#plugin-ecosystem--development)
+- [awesome-dsh-plugin — 开发与运行时](https://github.com/beancookie/awesome-dsh-plugin)
+- [DSH Plugin Leaderboard](https://dshpluginleaderboard.com/plugins/sandbaseai-dsh-plugin-store)
+
+这些收录用于提升项目发现能力，并不构成安全背书。插件是否允许安装，仍由 Store 的运行时验证和包来源校验决定。
+
 ## 相关项目
 
 - [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)
