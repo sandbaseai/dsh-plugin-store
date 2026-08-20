@@ -21,10 +21,10 @@
 将 GitHub Preview 安装到本地 DSH Web profile：
 
 ```bash
-dsh plugin --profile web add github:sandbaseai/dsh-plugin-store
+dsh plugin --profile web add github:sandbaseai/dsh-plugin-store#v0.1.0-preview.2
 ```
 
-重启 DSH Web 后打开 **Settings → Store**。当前仍是预览集成；安装前请检查源码。如果需要完整可复现的源码工作区构建，请使用下面的开发安装方式。
+显式 tag 可避免 `main` 后续更新悄然改变实际安装的代码。重启 DSH Web 后打开 **Settings → Store**。当前仍是预览集成；安装前请检查源码。如果需要完整可复现的源码工作区构建，请使用下面的开发安装方式。
 
 ## 可复现的开发安装
 

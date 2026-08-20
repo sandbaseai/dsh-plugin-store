@@ -20,15 +20,16 @@ DSH Plugin Store turns the growing DeepSeek Harness plugin ecosystem into a sear
 
 ## Try the preview
 
-Install the GitHub release into your local DSH Web profile:
+Install the immutable Preview 2 tag into your local DSH Web profile:
 
 ```bash
-dsh plugin --profile web add github:sandbaseai/dsh-plugin-store
+dsh plugin --profile web add github:sandbaseai/dsh-plugin-store#v0.1.0-preview.2
 ```
 
-Restart DSH Web, open **Settings**, and select **Store**. This is a preview
-integration: review the source before installation and use the development
-route below if you need a fully reproducible source-workspace build.
+The explicit tag prevents a later change on `main` from silently changing the
+code you install. Restart DSH Web, open **Settings**, and select **Store**. This
+is a preview integration: review the source before installation and use the
+development route below if you need a fully reproducible source-workspace build.
 
 ## What it solves
 
