@@ -18,13 +18,14 @@
 
 ## 安装
 
-将 GitHub Preview 安装到本地 DSH Web profile：
+将预构建的 Preview 4 tarball 安装到本地 DSH Web profile：
 
 ```bash
-dsh plugin --profile web add github:sandbaseai/dsh-plugin-store#v0.1.0-preview.3
+curl -fL https://github.com/sandbaseai/dsh-plugin-store/releases/download/v0.1.0-preview.4/sandbaseai-dsh-plugin-store-0.1.0-preview.4.tgz -o /tmp/sandbaseai-dsh-plugin-store-0.1.0-preview.4.tgz
+dsh plugin --profile web add -w /tmp/sandbaseai-dsh-plugin-store-0.1.0-preview.4.tgz
 ```
 
-显式 tag 可避免 `main` 后续更新悄然改变实际安装的代码。Preview 3 面向公开的 DeepSeek Harness `0.1.0-rc.8` 运行时，包含已提交的 Host/Web 构建产物及经过隔离安装验证的预构建 tarball。重启 DSH Web 后打开 **Settings → Store**。当前仍是预览集成，安装前请检查源码。
+版本化 tarball 可避免 `main` 后续更新悄然改变实际安装的代码，并绕开 git 依赖的构建授权；`-w` 明确确认 Web profile 是 pnpm workspace 根目录。Preview 4 面向公开的 DeepSeek Harness `0.1.0-rc.8` 运行时。重启 DSH Web 后打开 **Settings → Store**。当前仍是预览集成，安装前请检查源码。
 
 ## 可复现的开发安装
 
@@ -41,16 +42,18 @@ dsh web
 
 启动后打开 DSH Settings，选择 **Store**。
 
-GitHub Preview 命令安装仓库中已提交的 Host 与 Web client 构建产物。Preview 3 已改用公开 rc.8 运行时 peer，并在干净 npm 环境中验证 package graph 与 Host 入口；源码 checkout 仍用于在 Harness 工作区内重新构建这些产物。
+Release tarball 安装仓库中已提交的 Host 与 Web client 构建产物。Preview 4 已改用公开 rc.8 运行时 peer 与 rc.8 `insert` patch schema，并在隔离 DSH 环境中验证 package graph、Host 入口与 profile 配置合成；源码 checkout 仍用于在 Harness 工作区内重新构建这些产物。
 
 ## 配置
 
 ```yaml
-- name: '@sandbaseai/dsh-plugin-store'
-  config:
-    enabled: true
-    catalogUrl: https://dshpluginleaderboard.com/api/catalog
-    timeoutMs: 30000
+- insert:
+    - id: sandbase-plugin-store
+      name: '@sandbaseai/dsh-plugin-store'
+      config:
+        enabled: true
+        catalogUrl: https://dshpluginleaderboard.com/api/catalog
+        timeoutMs: 30000
 ```
 
 ## 页面结构

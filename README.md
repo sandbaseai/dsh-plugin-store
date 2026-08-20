@@ -5,7 +5,7 @@
 [简体中文](README.zh.md)
 
 [![GitHub stars](https://img.shields.io/github/stars/sandbaseai/dsh-plugin-store?style=flat-square)](https://github.com/sandbaseai/dsh-plugin-store/stargazers)
-[![Preview release](https://img.shields.io/github/v/release/sandbaseai/dsh-plugin-store?include_prereleases&style=flat-square&label=preview)](https://github.com/sandbaseai/dsh-plugin-store/releases/tag/v0.1.0-preview.3)
+[![Preview release](https://img.shields.io/github/v/release/sandbaseai/dsh-plugin-store?include_prereleases&style=flat-square&label=preview)](https://github.com/sandbaseai/dsh-plugin-store/releases/tag/v0.1.0-preview.4)
 [![DeepSeek Harness](https://img.shields.io/badge/DeepSeek-Harness-2563eb?style=flat-square)](https://github.com/deepseek-ai/deepseek-harness)
 [![DSH Plugin Leaderboard](https://img.shields.io/badge/DSH_Leaderboard-listed-111827?style=flat-square)](https://dshpluginleaderboard.com/plugins/sandbaseai-dsh-plugin-store)
 [![Catalog](https://img.shields.io/badge/catalog-4%2C000%2B_packages-111827?style=flat-square)](https://dshpluginleaderboard.com/)
@@ -17,21 +17,23 @@
 
 DSH Plugin Store turns the growing DeepSeek Harness plugin ecosystem into a searchable product experience. It uses live catalog data from [DSH Plugin Leaderboard](https://dshpluginleaderboard.com/) and adds Agent tools for programmatic discovery.
 
-[Preview release](https://github.com/sandbaseai/dsh-plugin-store/releases/tag/v0.1.0-preview.3) · [Leaderboard listing](https://dshpluginleaderboard.com/plugins/sandbaseai-dsh-plugin-store) · [Open the catalog](https://dshpluginleaderboard.com/) · [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) · [Report an issue](https://github.com/sandbaseai/dsh-plugin-store/issues)
+[Preview release](https://github.com/sandbaseai/dsh-plugin-store/releases/tag/v0.1.0-preview.4) · [Leaderboard listing](https://dshpluginleaderboard.com/plugins/sandbaseai-dsh-plugin-store) · [Open the catalog](https://dshpluginleaderboard.com/) · [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) · [Report an issue](https://github.com/sandbaseai/dsh-plugin-store/issues)
 
 ## Try the preview
 
-Install the immutable Preview 3 tag into a public DeepSeek Harness `0.1.0-rc.8`
-Web profile:
+Install the prebuilt Preview 4 tarball into a public DeepSeek Harness
+`0.1.0-rc.8` Web profile:
 
 ```bash
-dsh plugin --profile web add github:sandbaseai/dsh-plugin-store#v0.1.0-preview.3
+curl -fL https://github.com/sandbaseai/dsh-plugin-store/releases/download/v0.1.0-preview.4/sandbaseai-dsh-plugin-store-0.1.0-preview.4.tgz -o /tmp/sandbaseai-dsh-plugin-store-0.1.0-preview.4.tgz
+dsh plugin --profile web add -w /tmp/sandbaseai-dsh-plugin-store-0.1.0-preview.4.tgz
 ```
 
-The explicit tag prevents a later change on `main` from silently changing the
-code you install. Restart DSH Web, open **Settings**, and select **Store**. This
-is a preview integration: review the source before installation. Preview 3 ships
-committed Host and Web artifacts plus an install-tested release tarball.
+The versioned tarball prevents a later change on `main` from silently changing
+the code you install and avoids git dependency build permissions. `-w` confirms
+that the Web profile is the pnpm workspace root. Restart DSH Web, open
+**Settings**, and select **Store**. This is a preview integration: review the
+source before installation.
 
 ## What it solves
 
@@ -90,18 +92,21 @@ pnpm --filter @sandbaseai/dsh-plugin-store bundle
 Then enable the bundle in the Web profile:
 
 ```yaml
-- name: '@sandbaseai/dsh-plugin-store'
-  config:
-    enabled: true
-    catalogUrl: https://dshpluginleaderboard.com/api/catalog
-    timeoutMs: 30000
+- insert:
+    - id: sandbase-plugin-store
+      name: '@sandbaseai/dsh-plugin-store'
+      config:
+        enabled: true
+        catalogUrl: https://dshpluginleaderboard.com/api/catalog
+        timeoutMs: 30000
 ```
 
-The GitHub preview command installs the committed Host and Web client artifacts.
-Preview 3 declares public rc.8 runtime peers and includes a prebuilt release
-tarball; its package graph and Host entrypoint are verified in a clean npm
-environment. The source-checkout path above remains the development route for
-rebuilding the artifacts inside the Harness workspace.
+The release tarball installs the committed Host and Web client artifacts.
+Preview 4 declares public rc.8 runtime peers and uses the rc.8 `insert` patch
+schema; its package graph, Host entrypoint, and composed profile configuration
+are verified in an isolated DSH environment. The source-checkout path above
+remains the development route for rebuilding artifacts inside the Harness
+workspace.
 
 ## Architecture
 
