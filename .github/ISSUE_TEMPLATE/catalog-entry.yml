@@ -1,0 +1,88 @@
+name: Plugin catalog correction
+description: Correct a listing or report a reproducible install result for a plugin you maintain or tested.
+title: "[Catalog]: "
+labels:
+  - plugin-author
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping keep the Store useful. Catalog inclusion and `runtime-verified` are discovery signals, not a security audit or a compatibility guarantee.
+
+        Do not include API keys, tokens, private repository URLs, or unredacted local paths.
+
+  - type: input
+    id: repository
+    attributes:
+      label: Plugin repository
+      description: Use the canonical public `owner/repository` name.
+      placeholder: owner/repository
+    validations:
+      required: true
+
+  - type: dropdown
+    id: request
+    attributes:
+      label: Request type
+      options:
+        - Repository or description correction
+        - Category or tag correction
+        - Install verification result
+        - Listing removal request
+        - Other catalog feedback
+    validations:
+      required: true
+
+  - type: dropdown
+    id: relationship
+    attributes:
+      label: Your relationship to the plugin
+      options:
+        - Maintainer or contributor
+        - User or independent tester
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: Current Store result
+      description: Paste the current listing fields or describe the observed install result and first failing gate.
+      placeholder: Current name, description, category, package spec, status, or error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+      description: State the exact correction or outcome you expect.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Public evidence
+      description: Link to the manifest, release, package metadata, license, source commit, or reproducible log that supports the change.
+      placeholder: https://github.com/owner/repository/blob/commit/path/to/file
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Test environment
+      description: Required for install reports; otherwise enter `Not applicable`.
+      placeholder: DSH 0.1.0-rc.8, Web profile, macOS 15, Node 24
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I reviewed the linked public source and removed secrets and private data from this report.
+          required: true
