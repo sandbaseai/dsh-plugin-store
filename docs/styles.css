@@ -307,7 +307,7 @@ h2 {
 
 .ecosystem-links {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 14px;
   margin-top: 52px;
 }
@@ -501,6 +501,10 @@ html[data-theme="dark"] .hero-visual img {
 
   .final-cta img {
     order: 2;
+  }
+
+  .ecosystem-links {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
