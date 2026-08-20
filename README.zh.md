@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-面向 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的原生插件市场。它使用 [DSH Plugin Leaderboard](https://dshpluginleaderboard.com/) 的社区目录数据，在 Harness Web UI 内提供插件发现、Tag 筛选、本地安装和已安装插件管理。
+面向 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的原生插件市场。它使用 [DSH Plugin Leaderboard](https://dshpluginleaderboard.com/) 的社区目录数据，在 Harness Web UI 内提供插件发现、Tag 筛选、本地安装和已安装插件管理。本项目已进入 [Leaderboard 公开目录](https://dshpluginleaderboard.com/plugins/sandbaseai-dsh-plugin-store)。
 
 ## 核心能力
 

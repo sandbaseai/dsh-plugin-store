@@ -7,7 +7,8 @@
 [![GitHub stars](https://img.shields.io/github/stars/sandbaseai/dsh-plugin-store?style=flat-square)](https://github.com/sandbaseai/dsh-plugin-store/stargazers)
 [![Preview release](https://img.shields.io/github/v/release/sandbaseai/dsh-plugin-store?include_prereleases&style=flat-square&label=preview)](https://github.com/sandbaseai/dsh-plugin-store/releases/tag/v0.1.0-preview.2)
 [![DeepSeek Harness](https://img.shields.io/badge/DeepSeek-Harness-2563eb?style=flat-square)](https://github.com/deepseek-ai/deepseek-harness)
-[![Catalog](https://img.shields.io/badge/catalog-2%2C900%2B_plugins-111827?style=flat-square)](https://dshpluginleaderboard.com/)
+[![DSH Plugin Leaderboard](https://img.shields.io/badge/DSH_Leaderboard-listed-111827?style=flat-square)](https://dshpluginleaderboard.com/plugins/sandbaseai-dsh-plugin-store)
+[![Catalog](https://img.shields.io/badge/catalog-4%2C000%2B_packages-111827?style=flat-square)](https://dshpluginleaderboard.com/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-16a34a?style=flat-square)](LICENSE)
 
 ![DSH Plugin Store: Discover. Install. Extend.](assets/dsh-plugin-store-social-preview.png)
@@ -16,7 +17,7 @@
 
 DSH Plugin Store turns the growing DeepSeek Harness plugin ecosystem into a searchable product experience. It uses live catalog data from [DSH Plugin Leaderboard](https://dshpluginleaderboard.com/) and adds Agent tools for programmatic discovery.
 
-[Preview release](https://github.com/sandbaseai/dsh-plugin-store/releases/tag/v0.1.0-preview.2) · [Open the catalog](https://dshpluginleaderboard.com/) · [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) · [Report an issue](https://github.com/sandbaseai/dsh-plugin-store/issues)
+[Preview release](https://github.com/sandbaseai/dsh-plugin-store/releases/tag/v0.1.0-preview.2) · [Leaderboard listing](https://dshpluginleaderboard.com/plugins/sandbaseai-dsh-plugin-store) · [Open the catalog](https://dshpluginleaderboard.com/) · [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) · [Report an issue](https://github.com/sandbaseai/dsh-plugin-store/issues)
 
 ## Try the preview
 
@@ -35,7 +36,7 @@ development route below if you need a fully reproducible source-workspace build.
 
 The DSH ecosystem is growing quickly, but finding a plugin still means searching GitHub, checking compatibility, and copying install commands by hand. DSH Plugin Store creates one discovery layer for developers and agents.
 
-- Browse more than 2,900 community plugin repositories
+- Browse more than 4,000 plugin packages across 3,400 community repositories
 - Search by name, repository, description, or category
 - Filter with the complete leaderboard tag taxonomy
 - Sort by leaderboard rank, GitHub stars, or weekly growth

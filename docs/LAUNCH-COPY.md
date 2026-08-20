@@ -22,7 +22,7 @@ We are open-sourcing DSH Plugin Store, a native plugin marketplace for DeepSeek 
 
 The goal is simple: make the Harness plugin ecosystem usable as a product, not just a collection of repositories.
 
-The current integration includes community discovery, server-side tag filtering, leaderboard sorting, local Web profile installation, installed-plugin inventory, and Agent tools backed by a catalog of more than 2,900 repositories.
+The current integration includes community discovery, server-side tag filtering, leaderboard sorting, local Web profile installation, installed-plugin inventory, and Agent tools backed by a catalog of more than 4,000 plugin packages across 3,400 repositories.
 
 We are now looking for plugin authors, Harness users, and enterprise teams interested in private catalogs, allowlists, and audit requirements.
 
@@ -40,7 +40,7 @@ Body:
 
 DeepSeek Harness uses Cordis and treats almost everything as a plugin. The ecosystem is growing quickly, but discovery and installation are still fragmented across GitHub repositories.
 
-We built DSH Plugin Store to provide a native Community and Installed experience inside the Harness Web UI. The catalog supports server-side tag filters, leaderboard ranking, pagination, local profile installation, and Agent tools for programmatic discovery. Catalog data currently covers more than 2,900 repositories.
+We built DSH Plugin Store to provide a native Community and Installed experience inside the Harness Web UI. The catalog supports server-side tag filters, leaderboard ranking, pagination, local profile installation, and Agent tools for programmatic discovery. Catalog data currently covers more than 4,000 plugin packages across 3,400 repositories.
 
 The native integration is being developed against the current Harness rc.5 source tree. We are sharing it early because we want feedback from plugin authors and users before finalizing the stable package release.
 
@@ -68,7 +68,7 @@ What would you want a Harness plugin store to handle beyond install and discover
 
 We just open-sourced DSH Plugin Store for DeepSeek Harness.
 
-It adds native Community + Installed tabs, tag filters, rankings, local installation, and Agent catalog tools across 2,900+ community repositories.
+It adds native Community + Installed tabs, tag filters, rankings, local installation, and Agent catalog tools across 4,000+ plugin packages in 3,400+ community repositories.
 
 We are looking for early testers and plugin authors. If it is useful, a Star helps us understand whether to keep investing in the integration:
 
@@ -86,7 +86,7 @@ https://github.com/sandbaseai/dsh-plugin-store
 - 本地 Web Profile 安装
 - Cordis 插件状态查看
 - Agent 可调用的插件搜索工具
-- 2,900+ 社区仓库目录
+- 4,000+ 插件包、3,400+ 社区仓库目录
 
 我们正在寻找插件作者、Harness 用户和有企业私有目录需求的团队一起测试。
 
