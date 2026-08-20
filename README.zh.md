@@ -21,14 +21,14 @@
 将 GitHub Preview 安装到本地 DSH Web profile：
 
 ```bash
-dsh plugin --profile web add github:sandbaseai/dsh-plugin-store#v0.1.0-preview.2
+dsh plugin --profile web add github:sandbaseai/dsh-plugin-store#v0.1.0-preview.3
 ```
 
-显式 tag 可避免 `main` 后续更新悄然改变实际安装的代码。重启 DSH Web 后打开 **Settings → Store**。当前仍是预览集成；安装前请检查源码。如果需要完整可复现的源码工作区构建，请使用下面的开发安装方式。
+显式 tag 可避免 `main` 后续更新悄然改变实际安装的代码。Preview 3 面向公开的 DeepSeek Harness `0.1.0-rc.8` 运行时，包含已提交的 Host/Web 构建产物及经过隔离安装验证的预构建 tarball。重启 DSH Web 后打开 **Settings → Store**。当前仍是预览集成，安装前请检查源码。
 
 ## 可复现的开发安装
 
-当前原生集成面向 DeepSeek Harness `0.1.0-rc.5` 源码工作区。请先将本仓库克隆到 Harness checkout，再构建 Host 与 Web client：
+如需重新构建产物，请将本仓库克隆到 DeepSeek Harness 源码工作区，再构建 Host 与 Web client：
 
 ```bash
 cd /path/to/deepseek-harness
@@ -41,7 +41,7 @@ dsh web
 
 启动后打开 DSH Settings，选择 **Store**。
 
-GitHub Preview 命令安装仓库中已提交的 Host 与 Web client 构建产物。等公开 DSH package 版本与当前集成 API 对齐后，再提供稳定 npm package 安装命令；源码 checkout 仍是当前可复现的开发集成路径。
+GitHub Preview 命令安装仓库中已提交的 Host 与 Web client 构建产物。Preview 3 已改用公开 rc.8 运行时 peer，并在干净 npm 环境中验证 package graph 与 Host 入口；源码 checkout 仍用于在 Harness 工作区内重新构建这些产物。
 
 ## 配置
 
