@@ -163,6 +163,7 @@ The Store is independently discoverable in community-maintained DeepSeek Harness
 - [awesome-deepseek-harness — Plugin Ecosystem & Development](https://github.com/0xsline/awesome-deepseek-harness#plugin-ecosystem--development)
 - [awesome-dsh-plugin — Development & Runtime](https://github.com/beancookie/awesome-dsh-plugin)
 - [dshfind — public plugin profile](https://dshfind.com/en/plugins/sandbaseai/dsh-plugin-store)
+- [DSH 1024Store — source catalog entry](https://github.com/imsai-sh/awesome-deepseek-harness-plugins/blob/main/catalog/plugins/sandbaseai--dsh-plugin-store.json)
 - [DSH Plugin Leaderboard](https://dshpluginleaderboard.com/plugins/sandbaseai-dsh-plugin-store)
 
 These listings improve discovery; they are not security endorsements. Install eligibility is determined by the Store's runtime-verification and package-provenance checks.

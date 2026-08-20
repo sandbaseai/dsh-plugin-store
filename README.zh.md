@@ -101,6 +101,7 @@ pnpm dsh web
 - [awesome-deepseek-harness — Plugin Ecosystem & Development](https://github.com/0xsline/awesome-deepseek-harness#plugin-ecosystem--development)
 - [awesome-dsh-plugin — 开发与运行时](https://github.com/beancookie/awesome-dsh-plugin)
 - [dshfind — 公开插件详情页](https://dshfind.com/zh/plugins/sandbaseai/dsh-plugin-store)
+- [DSH 1024Store — 源目录条目](https://github.com/imsai-sh/awesome-deepseek-harness-plugins/blob/main/catalog/plugins/sandbaseai--dsh-plugin-store.json)
 - [DSH Plugin Leaderboard](https://dshpluginleaderboard.com/plugins/sandbaseai-dsh-plugin-store)
 
 这些收录用于提升项目发现能力，并不构成安全背书。插件是否允许安装，仍由 Store 的运行时验证和包来源校验决定。
