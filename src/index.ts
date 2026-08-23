@@ -15,6 +15,7 @@ import z from '@deepseek-ai/schemastery'
 import type {} from '@deepseek-ai/dsh-web'
 import type {} from '@deepseek-ai/dsh-host-webserver'
 import { defineTool } from '@deepseek-ai/dsh-tools'
+import { classifyInstallPath, formatInstallCommand, getInstallAvailability, type InstallSourceClassification } from './install-source'
 
 export const name = 'dsh_plugin_store'
 export const inject = ['tools', 'web', 'webServer'] as const
@@ -35,6 +36,7 @@ interface StorePlugin {
   id: string
   name: string
   repository: string
+  href?: string
   description: string
   categories: string[]
   installPath: string
@@ -45,6 +47,7 @@ interface StorePlugin {
   stars7dDelta: number
   createdAt: string
   updatedAt: string
+  detailPath?: string
 }
 
 interface CatalogResponse {
@@ -79,30 +82,54 @@ interface LeaderboardDetailResponse {
     repository?: string
     installPath?: string
     verificationStatus?: string
+    prerequisites?: string[]
+    runtimePrerequisites?: string[]
   }
+}
+
+interface CatalogReference {
+  href: string
+  repository: string
+  verificationStatus: string
+}
+
+export interface InstallSourceInfo {
+  repository: string
+  detailPath: string
+  catalogVerificationStatus: string
+  detailVerificationStatus: string
+  verificationConflict: boolean
+  availability: 'installable' | 'manual' | 'unverified' | 'conflict' | 'unsupported'
+  source: InstallSourceClassification
+  installPath?: string
+  prerequisites?: string[]
 }
 
 let cachedCatalog: CatalogResponse | null = null
 let cacheTime = 0
 const CACHE_TTL = 300_000
-const knownCatalogRepositories = new Map<string, { href: string; verificationStatus: string }>()
+
+function normalizeStorePlugin(item: StorePlugin): StorePlugin {
+  const detailPath = item.detailPath ?? item.href
+  return detailPath === undefined ? item : { ...item, detailPath }
+}
 
 function handleUpstreamError(err: unknown, toolName: string): never {
   const message = err instanceof Error ? err.message : String(err)
   throw new Error(`${toolName}: ${message}`)
 }
 
-async function getCatalog(catalogUrl: string, timeoutMs = 30_000): Promise<CatalogResponse> {
+async function getCatalog(catalogUrl: string, timeoutMs = 30_000, forceRefresh = false): Promise<CatalogResponse> {
   const now = Date.now()
-  if (cachedCatalog && (now - cacheTime) < CACHE_TTL) return cachedCatalog
+  if (!forceRefresh && cachedCatalog && (now - cacheTime) < CACHE_TTL) return cachedCatalog
 
   const response = await fetch(catalogUrl, { signal: AbortSignal.timeout(timeoutMs) })
   if (!response.ok) {
-    if (cachedCatalog) return cachedCatalog
+    if (!forceRefresh && cachedCatalog) return cachedCatalog
     throw new Error(`Catalog fetch failed: HTTP ${response.status}`)
   }
   const raw = await response.json() as LeaderboardResponse
-  const source = raw.catalog ?? (raw.items ?? []).map((item): StorePlugin => ({
+  const source = (raw.catalog ?? (raw.items ?? []).map((item): StorePlugin => ({
     id: item.repository,
     name: item.repository.split('/').at(-1) ?? item.repository,
     repository: item.repository,
@@ -116,15 +143,8 @@ async function getCatalog(catalogUrl: string, timeoutMs = 30_000): Promise<Catal
     stars7dDelta: item.stars7dDelta ?? 0,
     createdAt: '',
     updatedAt: '',
-  }))
-  for (const item of raw.items ?? []) {
-    if (item.href?.startsWith('/plugins/') === true) {
-      knownCatalogRepositories.set(item.repository, {
-        href: item.href,
-        verificationStatus: item.installVerificationStatus ?? '',
-      })
-    }
-  }
+    ...(item.href === undefined ? {} : { detailPath: item.href }),
+  }))).map(normalizeStorePlugin)
   cachedCatalog = {
     catalog: source,
     metrics: { pluginsTracked: raw.metrics?.pluginsTracked ?? source.length },
@@ -144,21 +164,13 @@ async function getCatalogPage(catalogUrl: string, limit: number, offset: number,
   const response = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) })
   if (!response.ok) throw new Error(`Catalog fetch failed: HTTP ${response.status}`)
   const raw = await response.json() as LeaderboardResponse
-  const items = raw.catalog ?? (raw.items ?? []).map((item): StorePlugin => ({
+  const items = (raw.catalog ?? (raw.items ?? []).map((item): StorePlugin => ({
     id: item.repository, name: item.repository.split('/').at(-1) ?? item.repository,
     repository: item.repository, description: item.description ?? '', categories: item.categories ?? [],
     installPath: '', verificationStatus: item.installVerificationStatus ?? 'unknown', stars: item.stars ?? 0, forks: 0,
     overallScore: Math.max(0, 1000 - (item.rank ?? 1000)), stars7dDelta: item.stars7dDelta ?? 0,
-    createdAt: '', updatedAt: '',
-  }))
-  for (const item of raw.items ?? []) {
-    if (item.href?.startsWith('/plugins/') === true) {
-      knownCatalogRepositories.set(item.repository, {
-        href: item.href,
-        verificationStatus: item.installVerificationStatus ?? '',
-      })
-    }
-  }
+    createdAt: '', updatedAt: '', ...(item.href === undefined ? {} : { detailPath: item.href }),
+  }))).map(normalizeStorePlugin)
   return {
     items, total: raw.total ?? raw.metrics?.pluginsTracked ?? items.length,
     limit: raw.limit ?? limit, offset: raw.offset ?? offset,
@@ -183,12 +195,34 @@ async function readBody(req: import('node:http').IncomingMessage): Promise<unkno
   return JSON.parse(Buffer.concat(chunks).toString('utf8')) as unknown
 }
 
-async function resolveInstallSpec(repository: string, catalogUrl: string, timeoutMs: number): Promise<string> {
-  const catalogEntry = knownCatalogRepositories.get(repository)
-  if (catalogEntry === undefined) throw new Error('Load this repository from the community catalog before installing it')
-  if (catalogEntry.verificationStatus !== 'verified') {
-    throw new Error('This plugin has not passed the leaderboard runtime installation check')
+async function resolveCatalogReference(repository: string, detailPath: string | undefined, catalogUrl: string, timeoutMs: number): Promise<CatalogReference> {
+  if (detailPath !== undefined && !/^\/plugins\/[a-z0-9-]+$/i.test(detailPath)) {
+    throw new Error('The selected plugin has an invalid catalog detail path')
   }
+
+  const pageSize = 100
+  let offset = 0
+  let total = Number.POSITIVE_INFINITY
+  while (offset < total) {
+    const page = await getCatalogPage(catalogUrl, pageSize, offset, '', timeoutMs)
+    const matches = page.items.filter(item => item.repository === repository && (detailPath === undefined || item.detailPath === detailPath))
+    const selected = matches.find(item => item.detailPath !== undefined)
+    if (selected?.detailPath !== undefined) {
+      return {
+        href: selected.detailPath,
+        repository: selected.repository,
+        verificationStatus: selected.verificationStatus,
+      }
+    }
+    if (page.items.length === 0) break
+    offset += page.items.length
+    total = page.total
+  }
+  throw new Error('Load this repository from the current community catalog before installing it')
+}
+
+async function resolveInstallSource(repository: string, detailPath: string | undefined, catalogUrl: string, timeoutMs: number): Promise<InstallSourceInfo> {
+  const catalogEntry = await resolveCatalogReference(repository, detailPath, catalogUrl, timeoutMs)
   if (!/^\/plugins\/[a-z0-9-]+$/i.test(catalogEntry.href)) throw new Error('The catalog returned an invalid plugin detail path')
 
   const detailUrl = new URL(`/api${catalogEntry.href}`, new URL(catalogUrl).origin)
@@ -197,14 +231,34 @@ async function resolveInstallSpec(repository: string, catalogUrl: string, timeou
   const detail = await response.json() as LeaderboardDetailResponse
   const plugin = detail.plugin
   if (plugin?.repository !== repository) throw new Error('Plugin detail does not match the selected repository')
-  if (plugin.verificationStatus !== 'runtime_verified') throw new Error('This plugin is not runtime-verified')
 
-  const match = /^dsh plugin --profile web add ([^\s]+)$/.exec(plugin.installPath ?? '')
-  const spec = match?.[1]
-  if (spec === undefined || !/^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*(?:@[a-z0-9][a-z0-9._+-]*)?$/i.test(spec)) {
+  const detailVerificationStatus = plugin?.verificationStatus ?? 'unknown'
+  const source = classifyInstallPath(plugin?.installPath)
+  const catalogVerified = catalogEntry.verificationStatus === 'verified'
+  const detailVerified = detailVerificationStatus === 'runtime_verified'
+  const availability = getInstallAvailability(catalogEntry.verificationStatus, detailVerificationStatus, source.kind)
+
+  return {
+    repository,
+    detailPath: catalogEntry.href,
+    catalogVerificationStatus: catalogEntry.verificationStatus,
+    detailVerificationStatus,
+    verificationConflict: catalogVerified !== detailVerified,
+    availability,
+    source,
+    ...(source.spec === undefined ? {} : { installPath: formatInstallCommand(source.spec) }),
+    ...((plugin?.prerequisites ?? plugin?.runtimePrerequisites) === undefined ? {} : { prerequisites: plugin.prerequisites ?? plugin.runtimePrerequisites }),
+  }
+}
+
+async function resolveInstallSpec(repository: string, detailPath: string | undefined, catalogUrl: string, timeoutMs: number): Promise<string> {
+  const source = await resolveInstallSource(repository, detailPath, catalogUrl, timeoutMs)
+  if (source.availability === 'conflict') throw new Error('Catalog and detail verification results conflict')
+  if (source.availability === 'unverified') throw new Error('This plugin has not passed the leaderboard runtime installation check')
+  if (source.availability !== 'installable' || source.source.spec === undefined) {
     throw new Error('The verified install command is not a supported npm package spec')
   }
-  return spec
+  return source.source.spec
 }
 
 async function installPackage(spec: string): Promise<void> {
@@ -246,7 +300,7 @@ export function apply(ctx: Context, config: Config = {}) {
       const category = requestUrl.searchParams.get('category') ?? ''
       const page = await getCatalogPage(catalogUrl, limit, offset, category, timeoutMs)
       sendJson(res, 200, { total: page.total, limit: page.limit, offset: page.offset, categories: page.categories, items: page.items.map(plugin => ({
-        repository: plugin.repository, name: plugin.name, description: plugin.description,
+        repository: plugin.repository, detailPath: plugin.detailPath, name: plugin.name, description: plugin.description,
         categories: plugin.categories, stars: plugin.stars, stars7dDelta: plugin.stars7dDelta,
         rank: Math.max(0, 1000 - plugin.overallScore), verificationStatus: plugin.verificationStatus,
       })) })
@@ -256,14 +310,27 @@ export function apply(ctx: Context, config: Config = {}) {
   ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/api/plugin-store/install', handler: async (req, res) => {
     if (req.method !== 'POST') return sendJson(res, 405, { error: 'Method not allowed' })
     try {
-      const body = await readBody(req) as { repository?: unknown }
+      const body = await readBody(req) as { repository?: unknown; detailPath?: unknown }
       const repository = typeof body.repository === 'string' ? body.repository : ''
+      const detailPath = typeof body.detailPath === 'string' ? body.detailPath : undefined
       if (!/^[\w.-]+\/[\w.-]+$/.test(repository)) throw new Error('Invalid GitHub repository')
-      const spec = await resolveInstallSpec(repository, catalogUrl, timeoutMs)
+      const spec = await resolveInstallSpec(repository, detailPath, catalogUrl, timeoutMs)
       await installPackage(spec)
       sendJson(res, 200, { ok: true, package: spec })
     } catch (error) { sendJson(res, 400, { error: error instanceof Error ? error.message : String(error) }) }
   } }), 'dsh-store: install route')
+
+  ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/api/plugin-store/source', handler: async (req, res) => {
+    if (req.method !== 'POST') return sendJson(res, 405, { error: 'Method not allowed' })
+    try {
+      const body = await readBody(req) as { repository?: unknown; detailPath?: unknown }
+      const repository = typeof body.repository === 'string' ? body.repository : ''
+      const detailPath = typeof body.detailPath === 'string' ? body.detailPath : undefined
+      if (!/^[\w.-]+\/[\w.-]+$/.test(repository)) throw new Error('Invalid GitHub repository')
+      const source = await resolveInstallSource(repository, detailPath, catalogUrl, timeoutMs)
+      sendJson(res, 200, source)
+    } catch (error) { sendJson(res, 400, { error: error instanceof Error ? error.message : String(error) }) }
+  } }), 'dsh-store: source route')
 
   void (async () => {
     // ── store_search ──
@@ -380,8 +447,35 @@ export function apply(ctx: Context, config: Config = {}) {
             return `Plugin "${args.name}" not found in the store. Try store_search to find plugins.`
           }
 
-          const spec = await resolveInstallSpec(plugin.repository, catalogUrl, timeoutMs)
-          const installCmd = `dsh plugin --profile web add -w ${spec}`
+          const source = await resolveInstallSource(plugin.repository, plugin.detailPath, catalogUrl, timeoutMs)
+          if (source.availability === 'conflict') {
+            return [`# ${plugin.name}`, `**Status**: verification conflict`, '', 'The catalog and detail records disagree. Do not install this plugin until the evidence is reconciled.'].join('\n')
+          }
+          if (source.availability === 'unverified') {
+            return [`# ${plugin.name}`, `**Status**: unverified`, '', 'This plugin has not passed the required runtime verification.'].join('\n')
+          }
+          if (source.availability !== 'installable' || source.source.spec === undefined) {
+            const prerequisites = source.prerequisites?.length ? `\n**Prerequisites**: ${source.prerequisites.join(', ')}` : ''
+            const manual = source.availability === 'manual' || source.source.kind === 'github-subdir'
+            return [
+              `# ${plugin.name}`,
+              `**Description**: ${plugin.description}`,
+              `**Repository**: https://github.com/${plugin.repository}`,
+              `**Status**: ${manual ? 'manual install' : 'unsupported source'}`,
+              source.verificationConflict ? `**Verification evidence**: catalog=${source.catalogVerificationStatus}, detail=${source.detailVerificationStatus} (conflict; manual execution only)` : '',
+              prerequisites,
+              '',
+              manual ? `## Manual install` : `## Installation blocked`,
+              '```bash',
+              source.installPath ?? source.source.reason ?? 'No verified install command is available.',
+              '```',
+              '',
+              manual
+                ? 'Review the source and prerequisites, then run the command yourself. The Store will not execute non-npm sources.'
+                : 'The Store will not execute this source because it is outside the supported install boundary.',
+            ].join('\n')
+          }
+          const installCmd = `dsh plugin --profile web add -w ${source.source.spec}`
           return [
             `# ${plugin.name}`,
             `**Description**: ${plugin.description}`,

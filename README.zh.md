@@ -81,8 +81,10 @@ Release tarball 安装仓库中已提交的 Host 与 Web client 构建产物。P
 - 仅安装到本地 `web` profile
 - 仓库必须符合 GitHub `owner/repository` 格式
 - 仓库必须先出现在已加载的社区目录中
-- 仅允许 Leaderboard 已完成运行时验证的插件
-- 安装 spec 必须来自详情 API，且只能是 npm package spec；拒绝 URL、git spec 与 shell 语法
+- 一键安装仅允许目录与详情记录均已验证的 npm package spec
+- 已验证的 GitHub 子目录和其他非 npm 来源只展示手动安装命令，支持复制但不会自动执行
+- 目录与详情验证状态冲突或缺失时会明确阻断或显示警告
+- 安装 spec 必须来自详情 API；自动安装拒绝 URL、git spec 与 shell 语法
 - 新插件需要重启 DSH 后生效
 
 ## 开发

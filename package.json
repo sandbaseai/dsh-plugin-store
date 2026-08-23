@@ -52,6 +52,7 @@
   "scripts": {
     "bundle": "tsdown --env.DSH_BUILD_FACE client",
     "typecheck": "tsc -b --pretty false",
+    "test:source": "node --experimental-strip-types --test tests/install-source.test.mjs",
     "watch": "tsdown --watch"
   },
   "files": ["lib/index.js", "lib/client.js", "lib/types/**/*.d.ts", "cordis.patch.yml", "README.md", "README.zh.md"],

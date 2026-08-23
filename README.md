@@ -125,7 +125,7 @@ flowchart LR
 
 Installing a plugin may download and execute third-party code, including package lifecycle scripts. Review source repositories before installation. Enterprise deployments should place the catalog behind an organizational review and allowlist process.
 
-The native installer validates GitHub repository identifiers, requires the selected catalog entry to be runtime-verified, resolves its exact npm package spec from the Leaderboard detail API, and rejects URLs, git specs, shell syntax, and unverified entries.
+The native installer validates GitHub repository identifiers, resolves the selected catalog entry against its detail record, and keeps one-click installation restricted to verified npm package specs. Verified GitHub subdirectory and other non-npm sources are shown as manual-install instructions with copy-only behavior; they are never passed to the installer process. Conflicting or missing verification evidence is surfaced as a blocked or explicitly warned state.
 
 Report security issues through GitHub's
 [private vulnerability reporting](https://github.com/sandbaseai/dsh-plugin-store/security/advisories/new),
