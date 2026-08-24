@@ -75,21 +75,29 @@ The hosted catalog remains available while the native integration is finalized a
 | `store_catalog` | Browse and rank catalog entries. |
 | `store_install` | Return reviewed installation instructions. |
 
-## Reproducible development installation
+## Reproducible standalone development
 
-DeepSeek Harness is evolving rapidly. For the current source integration, clone
-this repository into a Harness checkout, install the workspace, and build the
-host and Web client faces:
+The source build no longer requires a DeepSeek Harness monorepo checkout. A
+clean clone installs the public rc.8 development packages and reproduces the
+committed Host, Web client, and declaration artifacts:
 
 ```bash
-cd /path/to/deepseek-harness
-git clone https://github.com/sandbaseai/dsh-plugin-store.git packages/plugins/dsh-store
-pnpm install
-pnpm --filter @sandbaseai/dsh-plugin-store typecheck
-pnpm --filter @sandbaseai/dsh-plugin-store bundle
+git clone https://github.com/sandbaseai/dsh-plugin-store.git
+cd dsh-plugin-store
+corepack pnpm install --frozen-lockfile
+corepack pnpm verify
 ```
 
-Then enable the bundle in the Web profile:
+To test source changes in DSH, build a local tarball and install that explicit
+artifact into a disposable Web profile:
+
+```bash
+corepack pnpm build
+npm pack
+dsh plugin --profile web add -w /absolute/path/sandbaseai-dsh-plugin-store-0.1.0-preview.5.tgz
+```
+
+The bundle uses this Web profile configuration:
 
 ```yaml
 - insert:
@@ -105,9 +113,9 @@ The release tarball installs the committed Host and Web client artifacts.
 Preview 5 declares public rc.8 runtime peers, uses the rc.8 `insert` patch
 schema, and installs only Leaderboard runtime-verified npm package specs. Its
 package graph, Host entrypoint, composed profile configuration, and Store-button
-installation path are verified in an isolated DSH environment. The
-source-checkout path above remains the development route for rebuilding
-artifacts inside the Harness workspace.
+installation path are verified in an isolated DSH environment. The standalone
+build keeps the rc.8 runtime packages as peers; its pinned development packages
+exist only to typecheck and reproduce the published artifacts.
 
 ## Architecture
 

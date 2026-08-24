@@ -1,21 +1,25 @@
 {
-  "extends": "../../../tsconfig.base.client.json",
   "compilerOptions": {
+    "target": "ES2024",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
     "rootDir": "src",
     "outDir": "lib/types",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "types": ["node"]
   },
-  "include": ["src"],
-  "references": [
-    { "path": "../../../vendor/cordis" },
-    { "path": "../../../vendor/schemastery" },
-    { "path": "../../core/tools" },
-    { "path": "../../web/web" },
-    { "path": "../../host/webserver" },
-    { "path": "../../api/remotes/tsconfig.client.json" },
-    { "path": "../../client/runtime" },
-    { "path": "../../client/locale" },
-    { "path": "../../client/ui-settings" },
-    { "path": "../../client/ui-slots" }
-  ]
+  "include": ["src"]
 }
