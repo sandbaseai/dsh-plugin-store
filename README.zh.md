@@ -27,22 +27,26 @@ dsh plugin --profile web add -w /tmp/sandbaseai-dsh-plugin-store-0.1.0-preview.5
 
 版本化 tarball 可避免 `main` 后续更新悄然改变实际安装的代码，并绕开 git 依赖的构建授权；`-w` 明确确认 Web profile 是 pnpm workspace 根目录。Preview 5 面向公开的 DeepSeek Harness `0.1.0-rc.8` 运行时。重启 DSH Web 后打开 **Settings → Store**。当前仍是预览集成，安装前请检查源码。
 
-## 可复现的开发安装
+## 可复现的独立开发构建
 
-如需重新构建产物，请将本仓库克隆到 DeepSeek Harness 源码工作区，再构建 Host 与 Web client：
+源码构建不再依赖 DeepSeek Harness monorepo。全新 clone 会安装公开的 rc.8 开发包，并复现已提交的 Host、Web client 和类型声明产物：
 
 ```bash
-cd /path/to/deepseek-harness
-git clone https://github.com/sandbaseai/dsh-plugin-store.git packages/plugins/dsh-store
-pnpm install
-pnpm --filter @sandbaseai/dsh-plugin-store typecheck
-pnpm --filter @sandbaseai/dsh-plugin-store bundle
-dsh web
+git clone https://github.com/sandbaseai/dsh-plugin-store.git
+cd dsh-plugin-store
+corepack pnpm install --frozen-lockfile
+corepack pnpm verify
 ```
 
-启动后打开 DSH Settings，选择 **Store**。
+如需在 DSH 中验证源码改动，请构建本地 tarball，并将这个明确的产物安装到一次性 Web profile：
 
-Release tarball 安装仓库中已提交的 Host 与 Web client 构建产物。Preview 5 已改用公开 rc.8 运行时 peer 与 rc.8 `insert` patch schema，并且只允许安装 Leaderboard 已完成运行时验证的 npm package spec；package graph、Host 入口、profile 配置合成与 Store 按钮安装路径均在隔离 DSH 环境中验证。源码 checkout 仍用于在 Harness 工作区内重新构建这些产物。
+```bash
+corepack pnpm build
+npm pack
+dsh plugin --profile web add -w /absolute/path/sandbaseai-dsh-plugin-store-0.1.0-preview.5.tgz
+```
+
+Release tarball 安装仓库中已提交的 Host 与 Web client 构建产物。Preview 5 已改用公开 rc.8 运行时 peer 与 rc.8 `insert` patch schema，并且只允许安装 Leaderboard 已完成运行时验证的 npm package spec；package graph、Host 入口、profile 配置合成与 Store 按钮安装路径均在隔离 DSH 环境中验证。独立构建继续把 rc.8 运行时包保留为 peer；固定的开发包只用于类型检查和复现发布产物。
 
 ## 配置
 
@@ -84,15 +88,6 @@ Release tarball 安装仓库中已提交的 Host 与 Web client 构建产物。P
 - 仅允许 Leaderboard 已完成运行时验证的插件
 - 安装 spec 必须来自详情 API，且只能是 npm package spec；拒绝 URL、git spec 与 shell 语法
 - 新插件需要重启 DSH 后生效
-
-## 开发
-
-```bash
-pnpm install
-pnpm --dir packages/plugins/dsh-store run typecheck
-pnpm --dir packages/plugins/dsh-store run bundle
-pnpm dsh web
-```
 
 ## 相关项目
 
