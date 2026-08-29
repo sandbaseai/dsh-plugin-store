@@ -11,10 +11,20 @@
 
 import type { Context } from '@deepseek-ai/cordis'
 import { spawn } from 'node:child_process'
+import { existsSync, readFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
+import { dirname, join } from 'node:path'
 import z from '@deepseek-ai/schemastery'
 import type {} from '@deepseek-ai/dsh-web'
 import type {} from '@deepseek-ai/dsh-host-webserver'
 import { defineTool } from '@deepseek-ai/dsh-tools'
+import {
+  classifyInstallSource,
+  deriveFreshness,
+  isNpmPackageName,
+  parseSemver,
+  type InstallSourceKind,
+} from './plugin-evidence.ts'
 
 export const name = 'dsh_plugin_store'
 export const inject = ['tools', 'web', 'webServer'] as const
@@ -201,7 +211,7 @@ async function resolveInstallSpec(repository: string, catalogUrl: string, timeou
 
   const match = /^dsh plugin --profile web add ([^\s]+)$/.exec(plugin.installPath ?? '')
   const spec = match?.[1]
-  if (spec === undefined || !/^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*(?:@[a-z0-9][a-z0-9._+-]*)?$/i.test(spec)) {
+  if (spec === undefined || classifyInstallSource(spec) !== 'npm') {
     throw new Error('The verified install command is not a supported npm package spec')
   }
   return spec
@@ -231,6 +241,81 @@ async function installPackage(spec: string): Promise<void> {
   })
 }
 
+const LATEST_VERSION_TTL = 600_000
+const latestVersionCache = new Map<string, { value: string | undefined; time: number }>()
+
+/**
+ * Read the installed version of a package from the profile's node_modules.
+ * The Store itself is installed in the same tree, so resolving from this
+ * module finds sibling packages under both hoisted and symlinked pnpm
+ * layouts; the walk up to the package root reads only package.json manifests
+ * and never executes package code. Any failure degrades to undefined, which
+ * the freshness derivation reports as `unknown`.
+ */
+function readInstalledVersion(moduleName: string): string | undefined {
+  if (!isNpmPackageName(moduleName)) return undefined
+  try {
+    const require = createRequire(import.meta.url)
+    let current = dirname(require.resolve(moduleName))
+    for (let depth = 0; depth < 15; depth += 1) {
+      const manifestPath = join(current, 'package.json')
+      if (existsSync(manifestPath)) {
+        const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as { name?: unknown; version?: unknown }
+        if (manifest.name === moduleName && typeof manifest.version === 'string' && parseSemver(manifest.version) !== null) {
+          return manifest.version
+        }
+      }
+      const parent = dirname(current)
+      if (parent === current) return undefined
+      current = parent
+    }
+    return undefined
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * Latest version for an npm package from the registry. Failures and missing
+ * packages are cached like successes so a flaky network or unregistered name
+ * cannot turn into per-render request storms; callers degrade to `unknown`.
+ */
+async function fetchLatestVersion(moduleName: string, timeoutMs: number): Promise<string | undefined> {
+  if (!isNpmPackageName(moduleName)) return undefined
+  const now = Date.now()
+  const cached = latestVersionCache.get(moduleName)
+  if (cached && (now - cached.time) < LATEST_VERSION_TTL) return cached.value
+  let value: string | undefined
+  try {
+    const response = await fetch(`https://registry.npmjs.org/${moduleName}/latest`, {
+      signal: AbortSignal.timeout(timeoutMs),
+      headers: { accept: 'application/json' },
+    })
+    if (response.ok) {
+      const body = await response.json() as { version?: unknown }
+      if (typeof body.version === 'string' && parseSemver(body.version) !== null) value = body.version
+    }
+  } catch {
+    value = undefined
+  }
+  latestVersionCache.set(moduleName, { value, time: now })
+  return value
+}
+
+/**
+ * Public leaderboard page holding the verification evidence for a repository,
+ * when the catalog supplied a well-formed detail path this session.
+ */
+function evidenceUrlFor(repository: string, catalogUrl: string): string | undefined {
+  const entry = knownCatalogRepositories.get(repository)
+  if (entry === undefined || !/^\/plugins\/[a-z0-9-]+$/i.test(entry.href)) return undefined
+  try {
+    return new URL(entry.href, new URL(catalogUrl).origin).toString()
+  } catch {
+    return undefined
+  }
+}
+
 export function apply(ctx: Context, config: Config = {}) {
   if (config.enabled === false) return
 
@@ -249,6 +334,7 @@ export function apply(ctx: Context, config: Config = {}) {
         repository: plugin.repository, name: plugin.name, description: plugin.description,
         categories: plugin.categories, stars: plugin.stars, stars7dDelta: plugin.stars7dDelta,
         rank: Math.max(0, 1000 - plugin.overallScore), verificationStatus: plugin.verificationStatus,
+        evidenceUrl: evidenceUrlFor(plugin.repository, catalogUrl),
       })) })
     } catch (error) { sendJson(res, 502, { error: error instanceof Error ? error.message : String(error) }) }
   } }), 'dsh-store: catalog route')
@@ -264,6 +350,32 @@ export function apply(ctx: Context, config: Config = {}) {
       sendJson(res, 200, { ok: true, package: spec })
     } catch (error) { sendJson(res, 400, { error: error instanceof Error ? error.message : String(error) }) }
   } }), 'dsh-store: install route')
+
+  ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/api/plugin-store/freshness', handler: async (req, res) => {
+    if (req.method !== 'POST') return sendJson(res, 405, { error: 'Method not allowed' })
+    try {
+      const body = await readBody(req) as { packages?: unknown }
+      if (!Array.isArray(body.packages)) throw new Error('Request body must include a packages array')
+      const names = [...new Set(body.packages
+        .filter((value): value is string => typeof value === 'string' && value.length > 0 && value.length <= 214))]
+        .slice(0, 50)
+      const packages = await Promise.all(names.map(async (name): Promise<{
+        name: string
+        source: InstallSourceKind
+        installedVersion?: string
+        latestVersion?: string
+        freshness: ReturnType<typeof deriveFreshness>['state']
+      }> => {
+        // Only names inside the npm grammar get version lookups at all; every
+        // other installed module is reported as a non-registry source.
+        const source: InstallSourceKind = classifyInstallSource(name) === 'npm' ? 'npm' : 'non-npm'
+        const installedVersion = source === 'npm' ? readInstalledVersion(name) : undefined
+        const latestVersion = source === 'npm' ? await fetchLatestVersion(name, timeoutMs) : undefined
+        return { name, source, installedVersion, latestVersion, freshness: deriveFreshness({ source, installedVersion, latestVersion }).state }
+      }))
+      sendJson(res, 200, { packages })
+    } catch (error) { sendJson(res, 400, { error: error instanceof Error ? error.message : String(error) }) }
+  } }), 'dsh-store: freshness route')
 
   void (async () => {
     // ── store_search ──
