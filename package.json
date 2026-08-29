@@ -19,7 +19,9 @@
   "bugs": {
     "url": "https://github.com/sandbaseai/dsh-plugin-store/issues"
   },
-  "publishConfig": { "access": "public" },
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/sandbaseai/dsh-plugin-store.git"
@@ -28,7 +30,10 @@
   "main": "lib/index.js",
   "types": "lib/types/index.d.ts",
   "exports": {
-    ".": { "types": "./lib/types/index.d.ts", "default": "./lib/index.js" },
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
     "./client": {
       "types": "./lib/types/client/index.d.ts",
       "default": "./lib/client.js"
@@ -52,9 +57,17 @@
   "scripts": {
     "bundle": "tsdown --env.DSH_BUILD_FACE client",
     "typecheck": "tsc -b --pretty false",
-    "watch": "tsdown --watch"
+    "watch": "tsdown --watch",
+    "test:profile": "node --test tests/profile-snapshot.test.mjs"
   },
-  "files": ["lib/index.js", "lib/client.js", "lib/types/**/*.d.ts", "cordis.patch.yml", "README.md", "README.zh.md"],
+  "files": [
+    "lib/index.js",
+    "lib/client.js",
+    "lib/types/**/*.d.ts",
+    "cordis.patch.yml",
+    "README.md",
+    "README.zh.md"
+  ],
   "engines": {
     "node": "^22.19.0 || >=24.0.0"
   },
