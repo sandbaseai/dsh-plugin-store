@@ -111,8 +111,8 @@ export function compareSemver(left: string, right: string): number | null {
 
 export interface FreshnessInput {
   source: InstallSourceKind
-  installedVersion?: string
-  latestVersion?: string
+  installedVersion?: string | undefined
+  latestVersion?: string | undefined
 }
 
 /**
