@@ -14,10 +14,36 @@ interface CommunityPlugin {
   stars7dDelta: number
   rank: number
   verificationStatus: string
+  evidenceUrl?: string
 }
 
 type CatalogState = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; items: CommunityPlugin[]; total: number; categories: string[] }
 type InventoryEntry = { entryId: string; moduleName: string; enabled: boolean; fiberPhase: string | null }
+type FreshnessInfo = {
+  name: string
+  source: 'npm' | 'non-npm'
+  installedVersion?: string
+  latestVersion?: string
+  freshness: 'current' | 'update-available' | 'unknown' | 'non-registry'
+}
+
+// Typed evidence labels: each trust state names the signal behind it instead
+// of collapsing every state into a generic verified/unverified pair.
+const VERIFICATION_LABELS: Record<string, string> = {
+  verified: 'Runtime verified',
+  action_required: 'Needs build approval',
+  failed: 'Install check failed',
+  infrastructure_error: 'Verification interrupted',
+  not_tested: 'Not tested',
+  unknown: 'Unknown',
+}
+
+const FRESHNESS_LABELS: Record<FreshnessInfo['freshness'], string> = {
+  current: 'Current',
+  'update-available': 'Update available',
+  unknown: 'Version unknown',
+  'non-registry': 'Non-registry source',
+}
 
 async function json<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, init)
@@ -34,6 +60,7 @@ function StoreSection({ listInstalled }: { listInstalled: () => Promise<Inventor
   const [categories, setCategories] = useState<string[]>([])
   const [catalog, setCatalog] = useState<CatalogState>({ status: 'loading' })
   const [installed, setInstalled] = useState<InventoryEntry[]>([])
+  const [freshness, setFreshness] = useState<Record<string, FreshnessInfo>>({})
   const [installing, setInstalling] = useState<string>()
   const [loadingMore, setLoadingMore] = useState(false)
   const [notice, setNotice] = useState<string>()
@@ -57,7 +84,28 @@ function StoreSection({ listInstalled }: { listInstalled: () => Promise<Inventor
       setNotice(`Could not load more plugins: ${error instanceof Error ? error.message : String(error)}`)
     } finally { setLoadingMore(false) }
   }
-  const loadInstalled = () => { void listInstalled().then(setInstalled, () => { setInstalled([]) }) }
+  const loadFreshness = (entries: InventoryEntry[]) => {
+    if (entries.length === 0) {
+      setFreshness({})
+      return
+    }
+    // Route failure degrades every entry to no badge rather than a stale or
+    // fabricated freshness claim.
+    void json<{ packages: FreshnessInfo[] }>('/api/plugin-store/freshness', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ packages: entries.map(entry => entry.moduleName) }),
+    }).then(
+      value => { setFreshness(Object.fromEntries(value.packages.map(pkg => [pkg.name, pkg]))) },
+      () => { setFreshness({}) },
+    )
+  }
+  const loadInstalled = () => {
+    void listInstalled().then(
+      entries => { setInstalled(entries); loadFreshness(entries) },
+      () => { setInstalled([]); setFreshness({}) },
+    )
+  }
 
   useEffect(loadCatalog, [])
   useEffect(loadInstalled, [listInstalled])
@@ -109,16 +157,30 @@ function StoreSection({ listInstalled }: { listInstalled: () => Promise<Inventor
           const isVerified = plugin.verificationStatus === 'verified'
           return <li className={css.card} key={plugin.repository}>
             <span className={css.rank}>#{plugin.rank || '-'}</span>
-            <div className={css.plugin}><div className={css.titleLine}><h3>{plugin.name}</h3><code>{plugin.repository}</code></div><p>{plugin.description || 'No description available.'}</p><div className={css.tags}>{plugin.categories.slice(0, 2).map(category => <span key={category}>{category}</span>)}</div></div>
+            <div className={css.plugin}><div className={css.titleLine}><h3>{plugin.name}</h3><code>{plugin.repository}</code></div><p>{plugin.description || 'No description available.'}</p><div className={css.tags}>{plugin.categories.slice(0, 2).map(category => <span key={category}>{category}</span>)}<span className={css.status} data-status={plugin.verificationStatus}>{VERIFICATION_LABELS[plugin.verificationStatus] ?? 'Unknown'}</span></div></div>
             <div className={css.metrics}><strong>{plugin.stars.toLocaleString()}</strong><span>stars</span>{plugin.stars7dDelta > 0 ? <small>+{plugin.stars7dDelta.toLocaleString()} this week</small> : null}</div>
-            <div className={css.actions}><a href={`https://github.com/${plugin.repository}`} target="_blank" rel="noreferrer">Source</a><button type="button" disabled={isInstalled || !isVerified || installing !== undefined} title={isVerified ? 'Install the runtime-verified package' : 'Leaderboard runtime verification is required'} onClick={() => { void install(plugin) }}>{isInstalled ? 'Installed' : !isVerified ? 'Unverified' : installing === plugin.repository ? 'Installing...' : 'Install'}</button></div>
+            <div className={css.actions}>{plugin.evidenceUrl ? <a href={plugin.evidenceUrl} target="_blank" rel="noreferrer">Evidence</a> : null}<a href={`https://github.com/${plugin.repository}`} target="_blank" rel="noreferrer">Source</a><button type="button" disabled={isInstalled || !isVerified || installing !== undefined} title={isVerified ? 'Install the runtime-verified package' : VERIFICATION_LABELS[plugin.verificationStatus] ?? 'Verification evidence is unavailable'} onClick={() => { void install(plugin) }}>{isInstalled ? 'Installed' : !isVerified ? 'Unverified' : installing === plugin.repository ? 'Installing...' : 'Install'}</button></div>
           </li>
         })}</ul>}
         {catalog.items.length < catalog.total && normalized.length === 0 ? <div className={css.loadMore}><button type="button" disabled={loadingMore} onClick={() => { void loadMore() }}>{loadingMore ? 'Loading…' : 'Load more'}</button></div> : null}
       </> : null}
     </section> : <section className={css.content}>
       <div className={css.summary}><strong>{installed.length}</strong> Loader plugins</div>
-      {installed.length === 0 ? <p className={css.state}>No installed plugins are available.</p> : <ul className={css.installed}>{installed.map(item => <li key={item.entryId}><div><strong>{item.moduleName}</strong><code>{item.entryId}</code></div><span data-enabled={item.enabled}>{item.enabled ? item.fiberPhase === 'active' ? 'Running' : 'Enabled' : 'Disabled'}</span></li>)}</ul>}
+      {installed.length === 0 ? <p className={css.state}>No installed plugins are available.</p> : <ul className={css.installed}>{installed.map(item => {
+        const info = freshness[item.moduleName]
+        return <li key={item.entryId}>
+          <div><strong>{item.moduleName}</strong><code>{item.entryId}</code></div>
+          <div className={css.installedMeta}>
+            {info ? <>
+              <span data-freshness={info.freshness}>{FRESHNESS_LABELS[info.freshness]}</span>
+              {info.freshness === 'update-available' && info.installedVersion && info.latestVersion
+                ? <small className={css.versionDelta}>{info.installedVersion} → {info.latestVersion}</small>
+                : null}
+            </> : null}
+            <span data-enabled={item.enabled}>{item.enabled ? item.fiberPhase === 'active' ? 'Running' : 'Enabled' : 'Disabled'}</span>
+          </div>
+        </li>
+      })}</ul>}
     </section>}
   </div>
 }
