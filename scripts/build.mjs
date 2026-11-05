@@ -1,7 +1,7 @@
 import { build } from 'esbuild'
 import { transform } from 'lightningcss'
 import { readFile } from 'node:fs/promises'
-import { basename, resolve } from 'node:path'
+import { basename, relative, resolve } from 'node:path'
 
 const id = '@sandbaseai/dsh-plugin-store'
 await build({
@@ -18,7 +18,7 @@ await build({
   plugins: [{
     name: 'inline-css-modules',
     setup(builder) {
-      builder.onResolve({ filter: /\.module\.css$/ }, args => ({ path: resolve(args.resolveDir, args.path), namespace: 'css-module' }))
+      builder.onResolve({ filter: /\.module\.css$/ }, args => ({ path: relative(process.cwd(), resolve(args.resolveDir, args.path)), namespace: 'css-module' }))
       builder.onLoad({ filter: /.*/, namespace: 'css-module' }, async args => {
         const result = transform({ filename: basename(args.path), code: await readFile(args.path), cssModules: true, minify: true })
         const classes = Object.fromEntries(Object.entries(result.exports ?? {}).map(([name, value]) => [name, value.name]))
