@@ -1,7 +1,7 @@
 {
   "name": "@sandbaseai/dsh-plugin-store",
   "description": "Native DeepSeek Harness plugin marketplace for discovering, filtering, installing, and managing community DSH plugins.",
-  "version": "0.1.0-preview.5",
+  "version": "0.1.0-preview.6",
   "keywords": [
     "deepseek-harness",
     "dsh",
@@ -19,7 +19,9 @@
   "bugs": {
     "url": "https://github.com/sandbaseai/dsh-plugin-store/issues"
   },
-  "publishConfig": { "access": "public" },
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/sandbaseai/dsh-plugin-store.git"
@@ -28,7 +30,10 @@
   "main": "lib/index.js",
   "types": "lib/types/index.d.ts",
   "exports": {
-    ".": { "types": "./lib/types/index.d.ts", "default": "./lib/index.js" },
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
     "./client": {
       "types": "./lib/types/client/index.d.ts",
       "default": "./lib/client.js"
@@ -42,47 +47,49 @@
     "client": {
       "inject": [
         "@deepseek-ai/dsh-api-remotes",
-        "@deepseek-ai/dsh-client-runtime",
-        "@deepseek-ai/dsh-client-locale",
-        "@deepseek-ai/dsh-client-ui-settings"
+        "@deepseek-ai/dsh-client-ui-plugin-manager"
       ],
       "platform": "web"
     }
   },
   "scripts": {
-    "bundle": "tsdown --env.DSH_BUILD_FACE client",
-    "typecheck": "tsc -b --pretty false",
-    "watch": "tsdown --watch"
+    "bundle": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc && npm run bundle",
+    "test": "vitest run"
   },
-  "files": ["lib/index.js", "lib/client.js", "lib/types/**/*.d.ts", "cordis.patch.yml", "README.md", "README.zh.md"],
+  "files": [
+    "lib/",
+    "cordis.patch.yml",
+    "README.md",
+    "README.zh.md"
+  ],
   "engines": {
     "node": "^22.19.0 || >=24.0.0"
   },
   "license": "MIT",
   "peerDependencies": {
-    "@deepseek-ai/cordis": "^4.0.1",
-    "@deepseek-ai/dsh-api-remotes": "^0.1.0-rc.8",
-    "@deepseek-ai/dsh-client-locale": "^0.1.0-rc.8",
-    "@deepseek-ai/dsh-client-runtime": "^0.1.0-rc.8",
-    "@deepseek-ai/dsh-client-ui-settings": "^0.1.0-rc.8",
-    "@deepseek-ai/dsh-client-ui-slots": "^0.1.0-rc.8",
-    "@deepseek-ai/dsh-host-webserver": "^0.1.0-rc.8",
-    "@deepseek-ai/dsh-tools": "^0.1.0-rc.8",
-    "@deepseek-ai/dsh-web": "^0.1.0-rc.8",
-    "@deepseek-ai/schemastery": "^3.18.1",
-    "react": "^18.2.0"
+    "@deepseek-ai/cordis": "~4.0.5",
+    "@deepseek-ai/dsh-host-webserver": "^0.2.1-rc.5",
+    "@deepseek-ai/dsh-tools": "^0.2.1-rc.5",
+    "@deepseek-ai/dsh-web": "^0.2.1-rc.5",
+    "@deepseek-ai/schemastery": "~3.18.5",
+    "react": "^18.2.0 || ^19.0.0",
+    "@deepseek-ai/dsh-plugin-manager": "^0.2.1-rc.5"
   },
   "devDependencies": {
-    "@deepseek-ai/dsh-api-remotes": "workspace:^",
-    "@deepseek-ai/dsh-host-webserver": "workspace:^",
-    "@deepseek-ai/cordis": "workspace:^",
-    "@deepseek-ai/dsh-web": "workspace:^",
-    "@deepseek-ai/dsh-tools": "workspace:^",
-    "@deepseek-ai/dsh-client-runtime": "workspace:^",
-    "@deepseek-ai/dsh-client-locale": "workspace:^",
-    "@deepseek-ai/dsh-client-ui-settings": "workspace:^",
-    "@deepseek-ai/dsh-client-ui-slots": "workspace:^",
+    "@deepseek-ai/dsh-host-webserver": "0.2.1-rc.5",
+    "@deepseek-ai/cordis": "~4.0.5",
+    "@deepseek-ai/dsh-web": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.5",
     "react": "^18.2.0",
-    "@types/react": "~18.3.1"
+    "@types/react": "~18.3.1",
+    "@types/node": "^22.19.0",
+    "typescript": "~5.9.3",
+    "esbuild": "^0.25.12",
+    "lightningcss": "^1.30.2",
+    "vitest": "^3.2.4",
+    "@deepseek-ai/dsh-plugin-manager": "0.2.1-rc.5",
+    "@deepseek-ai/schemastery": "~3.18.5"
   }
 }

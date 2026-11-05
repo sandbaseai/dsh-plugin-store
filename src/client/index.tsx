@@ -1,9 +1,26 @@
-import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
-import type {} from '@deepseek-ai/dsh-client-locale/client'
-import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
-import type {} from '@deepseek-ai/dsh-api-remotes/client'
 import { useEffect, useMemo, useState } from 'react'
 import css from './StoreSection.module.css'
+
+interface ClientContext {
+  slots: {
+    inject(name: string, callback: () => unknown): void
+    register(slot: {
+      name: string
+      id: string
+      order: number
+      label: () => string
+      inject: () => { listInstalled: () => Promise<InventoryEntry[]> }
+    }, component: typeof StoreSection): unknown
+  }
+  remote: {
+    pluginInventory: {
+      list(): Promise<
+        | { ok: true; value: { entries: InventoryEntry[] } }
+        | { ok: false; error: { message: string } }
+      >
+    }
+  }
+}
 
 interface CommunityPlugin {
   repository: string
@@ -77,10 +94,10 @@ function StoreSection({ listInstalled }: { listInstalled: () => Promise<Inventor
     setInstalling(plugin.repository)
     setNotice(undefined)
     try {
-      await json('/api/plugin-store/install', {
+      const installed = await json<{ profile: string; application: string }>('/api/plugin-store/install', {
         method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ repository: plugin.repository }),
       })
-      setNotice(`${plugin.name} was installed to the web profile. Restart DSH to activate it.`)
+      setNotice(`${plugin.name} was installed to the ${installed.profile} profile.${installed.application === 'restart-required' ? ' Restart DSH to activate it.' : ''}`)
       loadInstalled()
     } catch (error) {
       setNotice(`Installation failed: ${error instanceof Error ? error.message : String(error)}`)
@@ -131,8 +148,8 @@ export function apply(ctx: ClientContext): void {
     if (!result.ok) throw new Error(result.error.message)
     return [...result.value.entries]
   }
-  ctx.slots.inject('settings.section', () => ctx.slots.register({
-    name: 'settings.section', id: 'plugin-store', order: 120, label: () => 'Store',
+  ctx.slots.inject('plugins.tab', () => ctx.slots.register({
+    name: 'plugins.tab', id: 'plugin-store', order: 120, label: () => 'Store',
     inject: () => ({ listInstalled }),
   }, StoreSection))
 }
