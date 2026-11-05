@@ -11,7 +11,7 @@
 import type { Context } from '@deepseek-ai/cordis';
 import z from '@deepseek-ai/schemastery';
 export declare const name = "dsh_plugin_store";
-export declare const inject: readonly ["tools", "web", "webServer"];
+export declare const inject: readonly ["tools", "web", "webServer", "profileContext", "pluginManager"];
 export interface Config {
     enabled?: boolean;
     catalogUrl?: string;
@@ -19,4 +19,3 @@ export interface Config {
 }
 export declare const Config: z<Config>;
 export declare function apply(ctx: Context, config?: Config): void;
-//# sourceMappingURL=index.d.ts.map

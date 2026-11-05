@@ -10,14 +10,14 @@
  */
 
 import type { Context } from '@deepseek-ai/cordis'
-import { spawn } from 'node:child_process'
+import { currentProfile, installCommand, installPackage } from './install.js'
 import z from '@deepseek-ai/schemastery'
 import type {} from '@deepseek-ai/dsh-web'
 import type {} from '@deepseek-ai/dsh-host-webserver'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 
 export const name = 'dsh_plugin_store'
-export const inject = ['tools', 'web', 'webServer'] as const
+export const inject = ['tools', 'web', 'webServer', 'profileContext', 'pluginManager'] as const
 
 export interface Config {
   enabled?: boolean
@@ -207,30 +207,6 @@ async function resolveInstallSpec(repository: string, catalogUrl: string, timeou
   return spec
 }
 
-async function installPackage(spec: string): Promise<void> {
-  const entry = process.argv[1]
-  if (entry === undefined) throw new Error('Cannot resolve the current DSH entrypoint')
-  await new Promise<void>((resolve, reject) => {
-    // A source-checkout launch uses apps/cli/src/bin.ts through tsx's ESM
-    // loader. Reuse that loader for the child; a packaged .js entry needs no
-    // loader and must not depend on tsx being installed globally.
-    const entryArgs = entry.endsWith('.ts') ? ['--import', 'tsx/esm', entry] : [entry]
-    const child = spawn(process.execPath, [...entryArgs, 'plugin', '--profile', 'web', 'add', '-w', spec], {
-      cwd: process.cwd(), env: process.env, stdio: ['ignore', 'pipe', 'pipe'],
-    })
-    let output = ''
-    const append = (chunk: unknown) => { output = `${output}${String(chunk)}`.slice(-65_536) }
-    child.stdout.on('data', append)
-    child.stderr.on('data', append)
-    const timer = setTimeout(() => { child.kill('SIGTERM') }, 120_000)
-    child.once('error', error => { clearTimeout(timer); reject(error) })
-    child.once('close', code => {
-      clearTimeout(timer)
-      code === 0 ? resolve() : reject(new Error(output.trim() || `Installer exited with code ${String(code)}`))
-    })
-  })
-}
-
 export function apply(ctx: Context, config: Config = {}) {
   if (config.enabled === false) return
 
@@ -260,8 +236,8 @@ export function apply(ctx: Context, config: Config = {}) {
       const repository = typeof body.repository === 'string' ? body.repository : ''
       if (!/^[\w.-]+\/[\w.-]+$/.test(repository)) throw new Error('Invalid GitHub repository')
       const spec = await resolveInstallSpec(repository, catalogUrl, timeoutMs)
-      await installPackage(spec)
-      sendJson(res, 200, { ok: true, package: spec })
+      const installed = await installPackage(ctx, spec)
+      sendJson(res, 200, { ok: true, package: spec, ...installed })
     } catch (error) { sendJson(res, 400, { error: error instanceof Error ? error.message : String(error) }) }
   } }), 'dsh-store: install route')
 
@@ -344,7 +320,7 @@ export function apply(ctx: Context, config: Config = {}) {
           const lines = [`# Plugin Store Catalog`, `Total: ${total} plugins | Showing: ${results.length}\n`]
           for (const p of results) {
             lines.push(`- **${p.name}** Stars:${p.stars} | Score:${p.overallScore.toFixed(0)} | ${p.description}`)
-            lines.push(`  Install: Open Settings → Store (runtime verification required)`)
+            lines.push(`  Install: Open Plugins → Store (runtime verification required)`)
             lines.push(`  Categories: ${p.categories?.join(', ') || 'None'}\n`)
           }
           return lines.join('\n')
@@ -381,7 +357,7 @@ export function apply(ctx: Context, config: Config = {}) {
           }
 
           const spec = await resolveInstallSpec(plugin.repository, catalogUrl, timeoutMs)
-          const installCmd = `dsh plugin --profile web add -w ${spec}`
+          const installCmd = installCommand(currentProfile(ctx), spec)
           return [
             `# ${plugin.name}`,
             `**Description**: ${plugin.description}`,

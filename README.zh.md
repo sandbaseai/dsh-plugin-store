@@ -4,6 +4,27 @@
 
 面向 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的原生插件市场。它使用 [DSH Plugin Leaderboard](https://dshpluginleaderboard.com/) 的社区目录数据，在 Harness Web UI 内提供插件发现、Tag 筛选、本地安装和已安装插件管理。本项目已进入 [Leaderboard 公开目录](https://dshpluginleaderboard.com/plugins/sandbaseai-dsh-plugin-store)。
 
+
+## 为 Desktop 或自定义 profile 构建
+
+需要 DeepSeek Harness 0.2.1-rc.5+、Node.js 22.19+ 和 npm。在独立仓库目录执行：
+
+```bash
+npm ci
+npm run build
+npm test
+npm pack
+# 使用 Desktop 自带的 CLI。
+dsh plugin --profile desktop add -w ./sandbaseai-dsh-plugin-store-0.1.0-preview.6.tgz
+```
+
+安装后重启 Desktop，打开 **插件 → Store**。商店调用宿主的
+`pluginManager.installBundle` 服务，由宿主管理当前 profile、包管理器、安装锁和失败回滚。
+Web 和自定义 profile 使用同一入口。安装结果包含实际 profile 和是否需要重启。
+宿主必须提供 `profileContext` 和 `pluginManager`，服务缺失时会报错。
+
+下方保留已发布 Web 预览版的安装说明，当前 profile 修复包含在上面的源码构建中。
+
 ## 核心能力
 
 - 原生集成到 DSH Settings，不嵌入外部网页

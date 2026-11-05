@@ -19,6 +19,30 @@ DSH Plugin Store turns the growing DeepSeek Harness plugin ecosystem into a sear
 
 [Preview release](https://github.com/sandbaseai/dsh-plugin-store/releases/tag/v0.1.0-preview.5) · [Leaderboard listing](https://dshpluginleaderboard.com/plugins/sandbaseai-dsh-plugin-store) · [Open the catalog](https://dshpluginleaderboard.com/) · [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) · [Report an issue](https://github.com/sandbaseai/dsh-plugin-store/issues)
 
+
+## Build for Desktop or a custom profile
+
+DeepSeek Harness 0.2.1-rc.5+, Node.js 22.19+ and npm are required. From this standalone repository:
+
+```bash
+npm ci
+npm run build
+npm test
+npm pack
+# Use the CLI provided by your installed Desktop application.
+dsh plugin --profile desktop add -w ./sandbaseai-dsh-plugin-store-0.1.0-preview.6.tgz
+```
+
+Restart Desktop after installation, then open **Plugins → Store**. Store installations use the host's
+`pluginManager.installBundle` service, which owns the active profile, package
+manager, locking and rollback. Web and custom profiles use that same service.
+The install response reports the actual profile and whether a restart is needed.
+The host must provide `profileContext` and `pluginManager`. No alternate profile
+is selected when either service is unavailable.
+
+The commands below describe the older published Web preview. The source build
+above includes the current-profile fix.
+
 ## Try the preview
 
 Install the prebuilt Preview 5 tarball into a public DeepSeek Harness
